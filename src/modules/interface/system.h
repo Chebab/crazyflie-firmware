@@ -1,6 +1,6 @@
 /*
- *    ||          ____  _ __                           
- * +------+      / __ )(_) /_______________ _____  ___ 
+ *    ||          ____  _ __
+ * +------+      / __ )(_) /_______________ _____  ___
  * | 0xBC |     / __  / / __/ ___/ ___/ __ `/_  / / _ \
  * +------+    / /_/ / / /_/ /__/ /  / /_/ / / /_/  __/
  *  ||  ||    /_____/_/\__/\___/_/   \__,_/ /___/\___/
@@ -28,6 +28,13 @@
 #define __SYSTEM_H__
 
 #include <stdint.h>
+/* FreeRtos includes */
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+// semaphores for hw6
+extern xSemaphoreHandle canThrust1Mutex;
+extern xSemaphoreHandle canThrust2Mutex;
 
 void systemInit(void);
 bool systemTest(void);

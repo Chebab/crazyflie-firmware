@@ -6,9 +6,10 @@
 #include "task.h"
 #include "config.h"
 #include "motors.h"
+#include "system.h"
 #include "stabilizer.h"
 
-bool isOn;
+static bool isOn;
 static uint16_t limitThrust(int32_t value);
 static bool isInit;
 
@@ -31,8 +32,8 @@ static void modeSwitchTask(void* param)
     // vTaskSuspend() will be invoked again by vTaskResume()
 
     // actual code for task
-    while (!xSemaphoreTake(canThrust1Mutex));
-    while (!xSemaphoreTake(canThrust2Mutex));
+    while (!xSemaphoreTake(canThrust1Mutex,portMAX_DELAY));
+    while (!xSemaphoreTake(canThrust2Mutex,portMAX_DELAY));
     uint16_t motorPowerTmp = motorPowerM1;
     motorPowerM1 = motorPowerM2;
     motorPowerM2 = motorPowerTmp;

@@ -27,10 +27,7 @@
 
 #include <stdbool.h>
 
-/* FreeRtos includes */
-#include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h"
+
 
 #include "debug.h"
 #include "version.h"

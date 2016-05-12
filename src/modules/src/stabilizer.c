@@ -77,7 +77,7 @@ uint32_t motorPowerM2;  // Motor 2 power output (16bit value used: 0 - 65535)
 uint32_t motorPowerM3;  // Motor 3 power output (16bit value used: 0 - 65535)
 uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
 
-bool isOn;
+static bool isOn;
 
 static bool isInit;
 
@@ -103,7 +103,7 @@ static void stabilizerTask(void* param)
     // try to take the semaphore until it is possible
     while (!xSemaphoreTake(canThrust1Mutex, portMAX_DELAY));
     isOn = !isOn; // flip the boolean
-    motorsSetRatio(MOTOR_M1, motorPowerM1*isOn);
+    motorsSetRatio(MOTOR_M4, motorPowerM1);
     xSemaphoreGive(canThrust1Mutex);
 
     /*
@@ -154,7 +154,7 @@ void stabilizerInit(void)
   isInit = true;
   isOn = false;
 
-  motorPowerM1 = limitThrust(fabs(10000));
+  motorPowerM1 = limitThrust(fabs(0));
 }
 
 bool stabilizerTest(void)

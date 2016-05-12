@@ -6,12 +6,14 @@
 #include "task.h"
 #include "config.h"
 #include "motors.h"
+#include "system.h"
 
 #include "stabilizer.h"
 
-bool isOn;
+static bool isOn;
 
 static bool isInit;
+static uint16_t limitThrust(int32_t value);
 
 static void referenceGeneratorTask(void* param)
 {
@@ -34,7 +36,7 @@ static void referenceGeneratorTask(void* param)
     // actual code for task
     while (!xSemaphoreTake(canThrust2Mutex, portMAX_DELAY));
     isOn = !isOn; // flip the boolean
-    motorsSetRatio(MOTOR_M2, motorPowerM2*isOn);
+    motorsSetRatio(MOTOR_M2, motorPowerM2);
     xSemaphoreGive(canThrust2Mutex);
   }
 }
@@ -51,7 +53,7 @@ void referenceGeneratorInit(void)
 
     isInit = true;
     isOn = false;
-    motorPowerM2 = limitThrust(fabs(20000));
+    motorPowerM2 = limitThrust(fabs(5000));
 }
 
 bool referenceGeneratorTest(void)
