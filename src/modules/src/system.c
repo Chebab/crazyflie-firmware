@@ -50,6 +50,10 @@
 #include "uart2.h"
 #include "comm.h"
 #include "stabilizer.h"
+//----- New tasks -----
+#include "mode_switch.h"
+#include "reference_generator.h"
+//------------
 #include "commander.h"
 #include "console.h"
 #include "usblink.h"
@@ -179,6 +183,10 @@ void systemTask(void *arg)
   commInit();
   commanderInit();
   stabilizerInit();
+  //------ New tasks -----
+  modeSwitchInit();
+  referenceGeneratorInit();
+  //------------
 #ifdef PLATFORM_CF2
   deckInit();
   #endif
