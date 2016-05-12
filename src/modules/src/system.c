@@ -82,6 +82,9 @@ static bool isInit;
 
 /* System wide synchronisation */
 xSemaphoreHandle canStartMutex;
+// semaphores for hw6
+xSemaphoreHandle canThrust1Mutex;
+xSemaphoreHandle canThrust2Mutex;
 
 /* Private functions */
 static void systemTask(void *arg);
@@ -103,6 +106,10 @@ void systemInit(void)
 
   canStartMutex = xSemaphoreCreateMutex();
   xSemaphoreTake(canStartMutex, portMAX_DELAY);
+
+  // creates mutexes for hw6
+  canThrust1Mutex = xSemaphoreCreateMutex();
+  canThrust2Mutex = xSemaphoreCreateMutex();
 
 #ifdef PLATFORM_CF2
   usblinkInit();

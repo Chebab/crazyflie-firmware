@@ -6,11 +6,7 @@
 #include "task.h"
 #include "config.h"
 #include "motors.h"
-
-uint32_t motorPowerM1;  // Motor 1 power output (16bit value used: 0 - 65535)
-uint32_t motorPowerM2;  // Motor 2 power output (16bit value used: 0 - 65535)
-uint32_t motorPowerM3;  // Motor 3 power output (16bit value used: 0 - 65535)
-uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
+#include "stabilizer.h"
 
 bool isOn;
 static uint16_t limitThrust(int32_t value);
@@ -35,9 +31,13 @@ static void modeSwitchTask(void* param)
     // vTaskSuspend() will be invoked again by vTaskResume()
 
     // actual code for task
-    isOn = !isOn; // flip the boolean
-    motorPowerM3 = limitThrust(fabs(10000*isOn));
-    motorsSetRatio(MOTOR_M3, motorPowerM3);
+    while (!xSemaphoreTake(canThrust1Mutex));
+    while (!xSemaphoreTake(canThrust2Mutex));
+    uint16_t motorPowerTmp = motorPowerM1;
+    motorPowerM1 = motorPowerM2;
+    motorPowerM2 = motorPowerTmp;
+    xSemaphoreGive(canThrust1Mutex);
+    xSemaphoreGive(canThrust2Mutex);
   }
 }
 
@@ -67,4 +67,3 @@ static uint16_t limitThrust(int32_t value)
 {
   return limitUint16(value);
 }
-
