@@ -101,7 +101,7 @@ static void stabilizerTask(void* param)
     vTaskDelayUntil(&lastWakeTime, F2T(1)); //1Hz before: IMU_UPDATE_FREQ=500Hz
 
     isOn = !isOn; // flip the boolean
-    motorPowerM1 = limitThrust(fabs(100*isOn));
+    motorPowerM1 = limitThrust(fabs(20000*isOn));
     motorsSetRatio(MOTOR_M1, motorPowerM1);
 
     /*

@@ -13,10 +13,8 @@ uint32_t motorPowerM3;  // Motor 3 power output (16bit value used: 0 - 65535)
 uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
 
 bool isOn;
-
-static bool isInit;
-
 static uint16_t limitThrust(int32_t value);
+static bool isInit;
 
 static void modeSwitchTask(void* param)
 {
@@ -38,8 +36,8 @@ static void modeSwitchTask(void* param)
 
     // actual code for task
     isOn = !isOn; // flip the boolean
-    motorPowerM2 = limitThrust(fabs(100*isOn));
-    motorsSetRatio(MOTOR_M2, motorPowerM2);
+    motorPowerM3 = limitThrust(fabs(10000*isOn));
+    motorsSetRatio(MOTOR_M3, motorPowerM3);
   }
 }
 
@@ -64,7 +62,9 @@ bool modeSwitchTest(void)
   return pass;
 }
 
+
 static uint16_t limitThrust(int32_t value)
 {
   return limitUint16(value);
 }
+
