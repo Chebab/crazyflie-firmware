@@ -77,6 +77,8 @@ uint32_t motorPowerM2;  // Motor 2 power output (16bit value used: 0 - 65535)
 uint32_t motorPowerM3;  // Motor 3 power output (16bit value used: 0 - 65535)
 uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
 
+bool isOn;
+
 static bool isInit;
 
 
@@ -96,7 +98,13 @@ static void stabilizerTask(void* param)
 
   while(1)
   {
-    vTaskDelayUntil(&lastWakeTime, F2T(IMU_UPDATE_FREQ)); // 500Hz
+    vTaskDelayUntil(&lastWakeTime, F2T(1)); //1Hz before: IMU_UPDATE_FREQ=500Hz
+
+    isOn = !isOn; // flip the boolean
+    motorPowerM1 = limitThrust(fabs(100*isOn));
+    motorsSetRatio(MOTOR_M1, motorPowerM1);
+
+    /*
 
     // Magnetometer not yet used more then for logging.
     imu9Read(&gyro, &acc, &mag);
@@ -123,6 +131,8 @@ static void stabilizerTask(void* param)
         attitudeCounter = 0;
       }
     }
+
+    */
   }
 }
 
@@ -140,6 +150,7 @@ void stabilizerInit(void)
               STABILIZER_TASK_STACKSIZE, NULL, STABILIZER_TASK_PRI, NULL);
 
   isInit = true;
+  isOn = false;
 }
 
 bool stabilizerTest(void)

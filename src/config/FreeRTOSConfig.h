@@ -128,6 +128,10 @@ to exclude the API function. */
 #define TASK_ADC_ID_NBR         4
 #define TASK_PM_ID_NBR          5
 #define TASK_PROXIMITY_ID_NBR   6
+//----- New tasks -----
+#define TASK_MODE_SWITCH_ID_NBR 7
+#define TASK_REFERENCE_GENERATOR_ID_NBR 8
+//------------
 
 #define configASSERT( x )  if( ( x ) == 0 ) assertFail(#x, __FILE__, __LINE__ )
 
