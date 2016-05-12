@@ -16,6 +16,8 @@ bool isOn;
 
 static bool isInit;
 
+static uint16_t limitThrust(int32_t value);
+
 static void modeSwitchTask(void* param)
 {
   uint32_t lastWakeTime;
@@ -60,4 +62,9 @@ bool modeSwitchTest(void)
   // do tests
 
   return pass;
+}
+
+static uint16_t limitThrust(int32_t value)
+{
+  return limitUint16(value);
 }
