@@ -100,9 +100,11 @@ static void stabilizerTask(void* param)
   {
     vTaskDelayUntil(&lastWakeTime, F2T(1)); //1Hz before: IMU_UPDATE_FREQ=500Hz
 
+    // try to take the semaphore until it is possible
+    while (!xSemaphoreTake(canThrust1Mutex, portMAX_DELAY));
     isOn = !isOn; // flip the boolean
-    motorPowerM1 = limitThrust(fabs(100*isOn));
-    motorsSetRatio(MOTOR_M1, motorPowerM1);
+    motorsSetRatio(MOTOR_M1, motorPowerM1*isOn);
+    xSemaphoreGive(canThrust1Mutex);
 
     /*
 
@@ -151,6 +153,8 @@ void stabilizerInit(void)
 
   isInit = true;
   isOn = false;
+
+  motorPowerM1 = limitThrust(fabs(10000));
 }
 
 bool stabilizerTest(void)

@@ -6,11 +6,7 @@
 #include "task.h"
 #include "config.h"
 #include "motors.h"
-
-uint32_t motorPowerM1;  // Motor 1 power output (16bit value used: 0 - 65535)
-uint32_t motorPowerM2;  // Motor 2 power output (16bit value used: 0 - 65535)
-uint32_t motorPowerM3;  // Motor 3 power output (16bit value used: 0 - 65535)
-uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
+#include "stabilizer.h"
 
 bool isOn;
 
@@ -37,9 +33,10 @@ static void referenceGeneratorTask(void* param)
     // vTaskSuspend() will be invoked again by vTaskResume()
 
     // actual code for task
+    while (!xSemaphoreTake(canThrust2Mutex, portMAX_DELAY));
     isOn = !isOn; // flip the boolean
-    motorPowerM2 = limitThrust(fabs(100*isOn));
-    motorsSetRatio(MOTOR_M2, motorPowerM2);
+    motorsSetRatio(MOTOR_M2, motorPowerM2*isOn);
+    xSemaphoreGive(canThrust2Mutex);
   }
 }
 
@@ -55,6 +52,7 @@ void referenceGeneratorInit(void)
 
     isInit = true;
     isOn = false;
+    motorPowerM2 = limitThrust(fabs(20000));
 }
 
 bool referenceGeneratorTest(void)
