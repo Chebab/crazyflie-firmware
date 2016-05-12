@@ -1,5 +1,7 @@
 build_info.json
 
+Makefile
+
 ^bin/dep/all
 bin/*
 .cproject
