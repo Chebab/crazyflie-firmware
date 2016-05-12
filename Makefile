@@ -21,6 +21,14 @@ DEBUG             ?= 0
 CLOAD_SCRIPT      ?= ../crazyflie-clients-python/bin/cfloader
 PLATFORM					?= CF2
 
+######### Stabilizer configuration ##########
+##### Sets the name of the stabilizer module to use.
+SENSORS            ?= stock
+ESTIMATOR          ?= complementary
+CONTROLLER         ?= pid
+POWER_DISTRIBUTION ?= stock
+
+
 ifeq ($(PLATFORM), CF1)
 OPENOCD_TARGET    ?= target/stm32f1x_stlink.cfg
 USE_FPU            = 0
@@ -137,17 +145,23 @@ PROJ_OBJ_CF2 += usb_bsp.o usblink.o usbd_desc.o usb.o
 # Hal
 PROJ_OBJ += crtp.o ledseq.o freeRTOSdebug.o buzzer.o
 PROJ_OBJ_CF1 += imu_cf1.o pm_f103.o nrf24link.o ow_none.o uart.o
-PROJ_OBJ_CF2 += imu_cf2.o pm_f405.o syslink.o radiolink.o ow_syslink.o proximity.o
+PROJ_OBJ_CF2 += imu_cf2.o pm_f405.o syslink.o radiolink.o ow_syslink.o proximity.o usec_time.o
 
 # libdw
 PROJ_OBJ_CF2 += libdw1000.o libdw1000Spi.o
 
 # Modules
 PROJ_OBJ += system.o comm.o console.o pid.o crtpservice.o param.o mem.o
-PROJ_OBJ += commander.o attitude_pid_controller.o sensfusion6.o stabilizer.o position_estimator_altitude.o position_controller_altitude.o altitude_hold.o
 PROJ_OBJ += log.o worker.o trigger.o sitaw.o queuemonitor.o
 PROJ_OBJ_CF1 += sound_cf1.o
 PROJ_OBJ_CF2 += platformservice.o sound_cf2.o extrx.o
+
+# Stabilizer modules
+PROJ_OBJ += commander.o attitude_pid_controller.o sensfusion6.o stabilizer.o
+PROJ_OBJ += position_estimator_altitude.o position_controller_pid.o
+PROJ_OBJ += estimator_$(ESTIMATOR).o controller_$(CONTROLLER).o
+PROJ_OBJ += sensors_$(SENSORS).o power_distribution_$(POWER_DISTRIBUTION).o
+
 
 # Deck Core
 PROJ_OBJ_CF2 += deck.o deck_info.o deck_drivers.o deck_test.o
@@ -194,6 +208,7 @@ CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)gcc
 SIZE = $(CROSS_COMPILE)size
 OBJCOPY = $(CROSS_COMPILE)objcopy
+GDB = $(CROSS_COMPILE)gdb
 
 INCLUDES  = -I$(FREERTOS)/include -I$(PORT) -Isrc
 INCLUDES += -Isrc/config -Isrc/hal/interface -Isrc/modules/interface
@@ -353,6 +368,9 @@ openocd:
 
 trace:
 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -f tools/trace/enable_trace.cfg
+
+gdb: $(PROG).elf
+	$(GDB) -ex "target remote localhost:3333" -ex "monitor reset halt" $^
 
 #Print preprocessor #defines
 prep:
