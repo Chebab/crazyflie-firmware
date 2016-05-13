@@ -7,6 +7,8 @@
 #include "config.h"
 #include "motors.h"
 #include "system.h"
+#include "commander.h"
+#include "position_estimator_altitude.h"
 
 #include "stabilizer.h"
 
@@ -47,8 +49,9 @@ static void referenceGeneratorTask(void* param)
       commanderGetRPY(&eulerRollDesired, &eulerPitchDesired, &eulerYawDesired);
       // used if you want controller to control rates of angles instead
       //commanderGetRPYType(&rollType, &pitchType, &yawType);
-
-      // TODO read acceleration reference
+      commanderGetThrust(&zAccDesired);
+      // TODO there is some kind of stateestimator for z and vz, meybe we can use them
+      //release reference mutex
       xSemaphoreGive(canUseReferenceMutex);
     }
   }

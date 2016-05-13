@@ -249,7 +249,7 @@ void commanderGetThrust(uint16_t* thrust)
 
   if (thrustLocked)
   {
-    *thrust = 0;
+    *thrust = 0; // TODO set this to our offset maybe?
   }
   else
   {
