@@ -71,6 +71,9 @@ static Axis3f mag;  // Magnetometer axis data in testla
 static float eulerRollActual;   // Measured roll angle in deg
 static float eulerPitchActual;  // Measured pitch angle in deg
 static float eulerYawActual;    // Measured yaw angle in deg
+static float rollRate;
+static float pitchRate;
+static float yawRate;
 
 uint16_t actuatorThrust;  // Actuator output for thrust base
 
@@ -87,7 +90,7 @@ static bool isInit;
 
 static uint16_t limitThrust(int32_t value);
 static void convertAngles(float eulerRollCrazyframe, float eulerPitchCrazyFrame);
-static void LQR(); // TODO: add arguments
+static void LQR(float currentStates[7]);
 
 static void stabilizerTask(void* param)
 {
@@ -117,15 +120,19 @@ static void stabilizerTask(void* param)
         sensfusion6GetEulerRPY(&eulerRollActual, &eulerPitchActual, &eulerYawActual);
 
         // convert from the crazyflie frame to ours
-        convertAngles(eulerRollActual, eulerPitchActual);
+        // TODO find out if gyro.x are actual values in degrees or radians
+        convertAngles(eulerRollActual, eulerPitchActual, eulerYawActual,
+          gyro.x, gyro.y, gyro.z);
 
         // try to take the semaphore until it is possible
         // TODO maybe move semaphores to LQR()
         while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
         while (!xSemaphoreTake(canUseStateGain, portMAX_DELAY));
 
-        // TODO: find angle rates and build states vector
-        // TODO: remember that angles are in degrees
+        states = {/* velocity here */,
+          eulerRollActual, eulerPitchActual, eulerYawActual,
+          rollRate, pitchRate, yawRate}; // TODO make shure this are all correct types and units
+        // TODO: remember that angles are in degrees?
         LQR(states); // uses the reference and is therefore inside semaphore protection
 
         xSemaphoreGive(canUseStateGainMutex);
@@ -134,10 +141,10 @@ static void stabilizerTask(void* param)
         // Set motors depending on the euler angles
         // TODO: set values based on thrusts from LQR
         // TODO: find how to transform them into pwm
-        motorPowerM1 = limitThrust(fabs(32000*eulerYawActual/180.0));
-        motorPowerM2 = limitThrust(fabs(32000*eulerPitchActual/180.0));
-        motorPowerM3 = limitThrust(fabs(32000*eulerRollActual/180.0));
-        motorPowerM4 = limitThrust(fabs(32000*eulerYawActual/180.0));
+        motorPowerM1 = limitThrust(fabs(/* enter thrusts in pwm */));
+        motorPowerM2 = limitThrust(fabs(/* enter thrusts in pwm */));
+        motorPowerM3 = limitThrust(fabs(/* enter thrusts in pwm */));
+        motorPowerM4 = limitThrust(fabs(/* enter thrusts in pwm */));
 
         motorsSetRatio(MOTOR_M1, motorPowerM1);
         motorsSetRatio(MOTOR_M2, motorPowerM2);
@@ -180,7 +187,7 @@ bool stabilizerTest(void)
   return pass;
 }
 
-static void LQR(float states[7])
+static void LQR(float currentStates[7])
 {
   if (isAgressive) {
     float K[4][7] = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
@@ -213,18 +220,27 @@ static void LQR(float states[7])
   for (out=0; out<4; out++) {
     for (state=0; state<7; state++) {
       thrusts[out] = Kr[out][state]*reference[state]
-                      -K[out][state]*states[state];
+                      -K[out][state]*currentStates[state];
     }
   }
 
 }
 
-static void convertAngles(float eulerRollCrazyframe, float eulerPitchCrazyFrame)
+static void convertAngles(
+  float rollCrazyframe, float pitchCrazyFrame, float yawCrazyFrame,
+  float rollRateCrazyFrame, float pitchRateCrazyFrame, float yawRateCrazyFrame)
 {
   eulerRollActual =
-      (float) 1/sqrt(2.0)*(eulerRollCrazyframe - eulerPitchCrazyFrame);
+      (float) 1/sqrt(2.0)*(rollCrazyframe - pitchCrazyFrame);
+  rollRate =
+      (float) 1/sqrt(2.0)*(rollRateCrazyframe - pitchRateCrazyFrame);
   eulerPitchActual =
-      (float) -1/sqrt(2.0)*(eulerRollCrazyframe + eulerPitchCrazyFrame);
+      (float) -1/sqrt(2.0)*(rollCrazyframe + pitchCrazyFrame);
+  pitchRate =
+      (float) -1/sqrt(2.0)*(rollRateCrazyframe + pitchRateCrazyFrame);
+  // yaw are the same in crazyframe and ours
+  eulerYawActual = yawCrazyFrame;
+  yawRate = yawRateCrazyFrame;
 }
 
 static uint16_t limitThrust(int32_t value)
