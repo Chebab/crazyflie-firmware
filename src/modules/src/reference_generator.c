@@ -10,7 +10,12 @@
 
 #include "stabilizer.h"
 
-static bool isOn;
+// TODO find and solve dependencies for commander
+
+float zAccDesired;
+float eulerRollDesired;   // Measured roll angle in deg
+float eulerPitchDesired;  // Measured pitch angle in deg
+float eulerYawDesired;    // Measured yaw angle in deg
 
 static bool isInit;
 static uint16_t limitThrust(int32_t value);
@@ -25,7 +30,7 @@ static void referenceGeneratorTask(void* param)
 
   lastWakeTime = xTaskGetTickCount();
 
-  while (1) {
+  while (1) { // TODO fix the entire function
     // some kind of event listening
     // this makes it run with a frequency
     // F2T comes from FreeRTOSConfig.h
@@ -34,10 +39,18 @@ static void referenceGeneratorTask(void* param)
     // vTaskSuspend() will be invoked again by vTaskResume()
 
     // actual code for task
-    while (!xSemaphoreTake(canThrust2Mutex, portMAX_DELAY));
-    isOn = !isOn; // flip the boolean
-    motorsSetRatio(MOTOR_M2, motorPowerM2);
-    xSemaphoreGive(canThrust2Mutex);
+    if (imu6IsCalibrated())
+    {
+      while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
+
+      // read references from controller
+      commanderGetRPY(&eulerRollDesired, &eulerPitchDesired, &eulerYawDesired);
+      // used if you want controller to control rates of angles instead
+      //commanderGetRPYType(&rollType, &pitchType, &yawType);
+
+      // TODO read acceleration reference
+      xSemaphoreGive(canUseReferenceMutex);
+    }
   }
 }
 
@@ -52,8 +65,6 @@ void referenceGeneratorInit(void)
                 REFERENCE_GENERATOR_TASK_PRI, NULL);
 
     isInit = true;
-    isOn = false;
-    motorPowerM2 = limitThrust(fabs(5000));
 }
 
 bool referenceGeneratorTest(void)

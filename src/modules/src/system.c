@@ -82,6 +82,9 @@ xSemaphoreHandle canStartMutex;
 // semaphores for hw6
 xSemaphoreHandle canThrust1Mutex;
 xSemaphoreHandle canThrust2Mutex;
+// semaphores for LQR
+xSemaphoreHandle canUseStateGain;
+xSemaphoreHandle canUseReference;
 
 /* Private functions */
 static void systemTask(void *arg);
@@ -107,6 +110,10 @@ void systemInit(void)
   // creates mutexes for hw6
   canThrust1Mutex = xSemaphoreCreateMutex();
   canThrust2Mutex = xSemaphoreCreateMutex();
+
+  // create mutexes for LQR
+  canUseStateGainMutex = xSemaphoreCreateMutex();
+  canUseReferenceMutex = xSemaphoreCreateMutex();
 
 #ifdef PLATFORM_CF2
   usblinkInit();

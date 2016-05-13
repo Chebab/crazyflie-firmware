@@ -5,6 +5,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+extern float zAccDesired;
+extern float eulerRollDesired;   // Measured roll angle in deg
+extern float eulerPitchDesired;  // Measured pitch angle in deg
+extern float eulerYawDesired;    // Measured yaw angle in deg
+
 void referenceGeneratorInit(void);
 
 bool referenceGeneratorTest(void);

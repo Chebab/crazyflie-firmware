@@ -32,6 +32,8 @@
 #include "system.h"
 #include "pm.h"
 #include "stabilizer.h"
+#include "reference_generator.h"
+#include "mode_switch.h"
 #include "commander.h"
 #include "attitude_controller.h"
 #include "sensfusion6.h"
@@ -77,12 +79,15 @@ uint32_t motorPowerM2;  // Motor 2 power output (16bit value used: 0 - 65535)
 uint32_t motorPowerM3;  // Motor 3 power output (16bit value used: 0 - 65535)
 uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
 
-static bool isOn;
+static float states[7];
+static float thrusts[4];
 
 static bool isInit;
 
 
 static uint16_t limitThrust(int32_t value);
+static void convertAngles(float eulerRollCrazyframe, float eulerPitchCrazyFrame);
+static void LQR(); // TODO: add arguments
 
 static void stabilizerTask(void* param)
 {
@@ -100,14 +105,6 @@ static void stabilizerTask(void* param)
   {
     vTaskDelayUntil(&lastWakeTime, F2T(1)); //1Hz before: IMU_UPDATE_FREQ=500Hz
 
-    // try to take the semaphore until it is possible
-    while (!xSemaphoreTake(canThrust1Mutex, portMAX_DELAY));
-    isOn = !isOn; // flip the boolean
-    motorsSetRatio(MOTOR_M4, motorPowerM1);
-    xSemaphoreGive(canThrust1Mutex);
-
-    /*
-
     // Magnetometer not yet used more then for logging.
     imu9Read(&gyro, &acc, &mag);
 
@@ -119,7 +116,24 @@ static void stabilizerTask(void* param)
         sensfusion6UpdateQ(gyro.x, gyro.y, gyro.z, acc.x, acc.y, acc.z, ATTITUDE_UPDATE_DT);
         sensfusion6GetEulerRPY(&eulerRollActual, &eulerPitchActual, &eulerYawActual);
 
+        // convert from the crazyflie frame to ours
+        convertAngles(eulerRollActual, eulerPitchActual);
+
+        // try to take the semaphore until it is possible
+        // TODO maybe move semaphores to LQR()
+        while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
+        while (!xSemaphoreTake(canUseStateGain, portMAX_DELAY));
+
+        // TODO: find angle rates and build states vector
+        // TODO: remember that angles are in degrees
+        LQR(states); // uses the reference and is therefore inside semaphore protection
+
+        xSemaphoreGive(canUseStateGainMutex);
+        xSemaphoreGive(canUseReferenceMutex);
+
         // Set motors depending on the euler angles
+        // TODO: set values based on thrusts from LQR
+        // TODO: find how to transform them into pwm
         motorPowerM1 = limitThrust(fabs(32000*eulerYawActual/180.0));
         motorPowerM2 = limitThrust(fabs(32000*eulerPitchActual/180.0));
         motorPowerM3 = limitThrust(fabs(32000*eulerRollActual/180.0));
@@ -130,11 +144,11 @@ static void stabilizerTask(void* param)
         motorsSetRatio(MOTOR_M3, motorPowerM3);
         motorsSetRatio(MOTOR_M4, motorPowerM4);
 
+
         attitudeCounter = 0;
       }
     }
 
-    */
   }
 }
 
@@ -152,9 +166,6 @@ void stabilizerInit(void)
               STABILIZER_TASK_STACKSIZE, NULL, STABILIZER_TASK_PRI, NULL);
 
   isInit = true;
-  isOn = false;
-
-  motorPowerM1 = limitThrust(fabs(0));
 }
 
 bool stabilizerTest(void)
@@ -167,6 +178,53 @@ bool stabilizerTest(void)
   pass &= attitudeControllerTest();
 
   return pass;
+}
+
+static void LQR(float states[7])
+{
+  if (isAgressive) {
+    float K[4][7] = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
+{-0.481824, -0.424516, 0.000000, -0.000472, -0.134684, 0.000000, -0.000150 },
+{-0.481824, -0.000000, -0.436087, 0.000472, -0.000000, -0.138356, 0.000150 },
+{-0.481824, 0.424516, 0.000000, -0.000472, 0.134684, 0.000000, -0.000150}
+};
+    float Kr[4][7] = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
+{-0.481824, -0.424516, 0.000000, -0.000472, -0.134684, 0.000000, -0.000150 },
+{-0.481824, -0.000000, -0.436087, 0.000472, -0.000000, -0.138356, 0.000150 },
+{-0.481824, 0.424516, 0.000000, -0.000472, 0.134684, 0.000000, -0.000150}
+};
+  }
+  else // TODO change the matrixes for the diferent modes
+  {
+    float K[4][7] = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
+{-0.481824, -0.424516, 0.000000, -0.000472, -0.134684, 0.000000, -0.000150 },
+{-0.481824, -0.000000, -0.436087, 0.000472, -0.000000, -0.138356, 0.000150 },
+{-0.481824, 0.424516, 0.000000, -0.000472, 0.134684, 0.000000, -0.000150}
+};
+    float Kr[4][7] = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
+{-0.481824, -0.424516, 0.000000, -0.000472, -0.134684, 0.000000, -0.000150 },
+{-0.481824, -0.000000, -0.436087, 0.000472, -0.000000, -0.138356, 0.000150 },
+{-0.481824, 0.424516, 0.000000, -0.000472, 0.134684, 0.000000, -0.000150}
+};
+  }
+
+  int out;
+  int state;
+  for (out=0; out<4; out++) {
+    for (state=0; state<7; state++) {
+      thrusts[out] = Kr[out][state]*reference[state]
+                      -K[out][state]*states[state];
+    }
+  }
+
+}
+
+static void convertAngles(float eulerRollCrazyframe, float eulerPitchCrazyFrame)
+{
+  eulerRollActual =
+      (float) 1/sqrt(2.0)*(eulerRollCrazyframe - eulerPitchCrazyFrame);
+  eulerPitchActual =
+      (float) -1/sqrt(2.0)*(eulerRollCrazyframe + eulerPitchCrazyFrame);
 }
 
 static uint16_t limitThrust(int32_t value)
