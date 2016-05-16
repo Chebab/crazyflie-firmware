@@ -9,8 +9,8 @@
 #include "system.h"
 #include "stabilizer.h"
 
-bool isAgressive;
-static bool isInit;
+bool isAgressive = false;
+static bool isInit = false;
 
 static void modeSwitchTask(void* param)
 {
@@ -48,7 +48,7 @@ void modeSwitchInit(void)
                 MODE_SWITCH_TASK_STACKSIZE, NULL, MODE_SWITCH_TASK_PRI, NULL);
 
     isInit = true;
-    isAggressive = false;
+    isAgressive = false;
 }
 
 bool modeSwitchTest(void)
