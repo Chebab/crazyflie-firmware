@@ -251,7 +251,7 @@ static int32_t thrust2PWM(float thrust)
   static float b = 0.1405;
   static float c = -0.000099;
 
-  thrust = thrust/1000; // make thrust to g
+  thrust = thrust/9.81; // make thrust to g
 
   return (int32_t) -b/(2*a)+sqrt((2*thrust + b -2*c)/(2*a));
 }
