@@ -105,6 +105,8 @@ static void stabilizerTask(void* param)
     isOn = !isOn; // flip the boolean
     motorsSetRatio(MOTOR_M4, motorPowerM1);
     xSemaphoreGive(canThrust1Mutex);
+    sensfusion6UpdateQ(gyro.x, gyro.y, gyro.z, acc.x, acc.y, acc.z, ATTITUDE_UPDATE_DT);
+    sensfusion6GetEulerRPY(&eulerRollActual, &eulerPitchActual, &eulerYawActual);
 
     /*
 
