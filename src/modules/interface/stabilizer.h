@@ -33,7 +33,6 @@ extern uint32_t motorPowerM2;  // Motor 2 power output (16bit value used: 0 - 65
 extern uint32_t motorPowerM3;  // Motor 3 power output (16bit value used: 0 - 65535)
 extern uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
 
-
 void stabilizerInit(void);
 
 bool stabilizerTest(void);

@@ -83,8 +83,8 @@ xSemaphoreHandle canStartMutex;
 xSemaphoreHandle canThrust1Mutex;
 xSemaphoreHandle canThrust2Mutex;
 // semaphores for LQR
-xSemaphoreHandle canUseStateGain;
-xSemaphoreHandle canUseReference;
+xSemaphoreHandle canUseStateGainMutex;
+xSemaphoreHandle canUseReferenceMutex;
 
 /* Private functions */
 static void systemTask(void *arg);
@@ -195,8 +195,8 @@ void systemTask(void *arg)
   commanderInit();
   stabilizerInit();
   //------ New tasks -----
-  modeSwitchInit();
-  referenceGeneratorInit();
+  //modeSwitchInit();
+  //referenceGeneratorInit();
   //------------
 #ifdef PLATFORM_CF2
   deckInit();

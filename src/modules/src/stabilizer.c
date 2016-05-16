@@ -64,6 +64,9 @@
 #define ALTHOLD_UPDATE_RATE_DIVIDER  5
 #define ALTHOLD_UPDATE_DT  (float)(1.0 / (IMU_UPDATE_FREQ / ALTHOLD_UPDATE_RATE_DIVIDER))   // 100hz
 
+#define STATE_SIZE 7
+#define INPUT_SIZE 4
+
 static Axis3f gyro; // Gyro axis data in deg/s
 static Axis3f acc;  // Accelerometer axis data in mG
 static Axis3f mag;  // Magnetometer axis data in testla
@@ -75,6 +78,18 @@ static float rollRate;
 static float pitchRate;
 static float yawRate;
 
+// Controller matrices
+const float K_agg[INPUT_SIZE][STATE_SIZE] = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
+{-0.481824, -0.424516, 0.000000, -0.000472, -0.134684, 0.000000, -0.000150 },
+{-0.481824, -0.000000, -0.436087, 0.000472, -0.000000, -0.138356, 0.000150 },
+{-0.481824, 0.424516, 0.000000, -0.000472, 0.134684, 0.000000, -0.000150}
+};
+const float Kr_agg[INPUT_SIZE][STATE_SIZE] = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
+{-0.481824, -0.424516, 0.000000, -0.000472, -0.134684, 0.000000, -0.000150 },
+{-0.481824, -0.000000, -0.436087, 0.000472, -0.000000, -0.138356, 0.000150 },
+{-0.481824, 0.424516, 0.000000, -0.000472, 0.134684, 0.000000, -0.000150}
+};
+
 uint16_t actuatorThrust;  // Actuator output for thrust base
 
 uint32_t motorPowerM1;  // Motor 1 power output (16bit value used: 0 - 65535)
@@ -82,14 +97,16 @@ uint32_t motorPowerM2;  // Motor 2 power output (16bit value used: 0 - 65535)
 uint32_t motorPowerM3;  // Motor 3 power output (16bit value used: 0 - 65535)
 uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
 
-static float states[7];
-static float thrusts[4];
+static float states[STATE_SIZE]={0,0,0,0,0,0,0};
+static float reference[STATE_SIZE]={0,0,0,0,0,0,0};
+static float thrusts[INPUT_SIZE]={0,0,0,0};
 
-static bool isInit;
-
+static bool isInit = false;
 
 static uint16_t limitThrust(float value);
-static void convertAngles(float eulerRollCrazyframe, float eulerPitchCrazyFrame);
+static void convertAngles(float rollCrazyframe, float pitchCrazyFrame, float yawCrazyFrame,
+float rollRateCrazyFrame, float pitchRateCrazyFrame, float yawRateCrazyFrame);
+
 static void LQR(float currentStates[7]);
 static int32_t thrust2PWM(float thrust);
 
@@ -107,7 +124,7 @@ static void stabilizerTask(void* param)
 
   while(1)
   {
-    vTaskDelayUntil(&lastWakeTime, F2T(1)); //1Hz before: IMU_UPDATE_FREQ=500Hz
+    vTaskDelayUntil(&lastWakeTime, F2T(IMU_UPDATE_FREQ)); //1Hz before: IMU_UPDATE_FREQ=500Hz
 
     // Magnetometer not yet used more then for logging.
     imu9Read(&gyro, &acc, &mag);
@@ -127,23 +144,33 @@ static void stabilizerTask(void* param)
 
         // try to take the semaphore until it is possible
         // TODO maybe move semaphores to LQR()
-        while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
-        while (!xSemaphoreTake(canUseStateGain, portMAX_DELAY));
+        //while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
+        //while (!xSemaphoreTake(canUseStateGain, portMAX_DELAY));
+        states[0]=0;
+        states[1]=eulerRollActual;
+        states[2]=eulerPitchActual;
+        states[3]=eulerYawActual;
+        states[4]=rollRate;
+        states[5]=pitchRate;
+        states[6]=yawRate;
 
-        states = {/* velocity here */,
-          eulerRollActual, eulerPitchActual, eulerYawActual,
-          rollRate, pitchRate, yawRate}; // TODO make shure this are all correct types and units
+        //states = {acc.z,eulerRollActual, eulerPitchActual, eulerYawActual,
+          //rollRate, pitchRate, yawRate}; // TODO make shure this are all correct types and units
         // TODO: remember that angles are in degrees?
         LQR(states); // uses the reference and is therefore inside semaphore protection
 
-        xSemaphoreGive(canUseStateGainMutex);
-        xSemaphoreGive(canUseReferenceMutex);
+        //xSemaphoreGive(canUseStateGainMutex);
+        //xSemaphoreGive(canUseReferenceMutex);
 
         // Set motors depending on the euler angles
-        motorPowerM1 = limitThrust(fabs(thrust2PWM(thrusts[0])));
-        motorPowerM2 = limitThrust(fabs(thrust2PWM(thrusts[1])));
-        motorPowerM3 = limitThrust(fabs(thrust2PWM(thrusts[2])));
-        motorPowerM4 = limitThrust(fabs(thrust2PWM(thrusts[3])));
+        // TODO: set values based on thrusts from LQR
+        // TODO: find how to transform them into pwm
+
+        motorPowerM1 = limitThrust(fabs(thrusts[0]));
+        motorPowerM2 = limitThrust(fabs(thrusts[1]));
+        motorPowerM3 = limitThrust(fabs(thrusts[2]));
+        motorPowerM4 = limitThrust(fabs(thrusts[3]));
+
 
         motorsSetRatio(MOTOR_M1, motorPowerM1);
         motorsSetRatio(MOTOR_M2, motorPowerM2);
@@ -186,9 +213,21 @@ bool stabilizerTest(void)
   return pass;
 }
 
+static void LQR_new(float *currentStates,float* reference,float *output,float **K, float **Kr){
+  int i = 0;
+  int j = 0;
+  for(;i<INPUT_SIZE;i++){
+    for(;j<STATE_SIZE;j++){
+      output[i]+=Kr[i][j]*reference[i]-K[i][j]*currentStates[j];
+    }
+  }
+}
+
 static void LQR(float currentStates[7])
 {
-  if (isAgressive) {
+  ;
+
+  //if (isAgressive) {
     float K[4][7] = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
 {-0.481824, -0.424516, 0.000000, -0.000472, -0.134684, 0.000000, -0.000150 },
 {-0.481824, -0.000000, -0.436087, 0.000472, -0.000000, -0.138356, 0.000150 },
@@ -199,26 +238,27 @@ static void LQR(float currentStates[7])
 {-0.481824, -0.000000, -0.436087, 0.000472, -0.000000, -0.138356, 0.000150 },
 {-0.481824, 0.424516, 0.000000, -0.000472, 0.134684, 0.000000, -0.000150}
 };
-  }
+  //}
+  /*
   else // TODO change the matrixes for the diferent modes
   {
-    float K[4][7] = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
+    K = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
 {-0.481824, -0.424516, 0.000000, -0.000472, -0.134684, 0.000000, -0.000150 },
 {-0.481824, -0.000000, -0.436087, 0.000472, -0.000000, -0.138356, 0.000150 },
 {-0.481824, 0.424516, 0.000000, -0.000472, 0.134684, 0.000000, -0.000150}
 };
-    float Kr[4][7] = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
+    Kr = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
 {-0.481824, -0.424516, 0.000000, -0.000472, -0.134684, 0.000000, -0.000150 },
 {-0.481824, -0.000000, -0.436087, 0.000472, -0.000000, -0.138356, 0.000150 },
 {-0.481824, 0.424516, 0.000000, -0.000472, 0.134684, 0.000000, -0.000150}
 };
-  }
+  }*/
 
   int out;
   int state;
   for (out=0; out<4; out++) {
     for (state=0; state<7; state++) {
-      thrusts[out] = Kr[out][state]*reference[state]
+      thrusts[out] += Kr[out][state]*reference[state]
                       -K[out][state]*currentStates[state];
     }
   }
@@ -226,17 +266,17 @@ static void LQR(float currentStates[7])
 }
 
 static void convertAngles(
-  float rollCrazyframe, float pitchCrazyFrame, float yawCrazyFrame,
+  float rollCrazyFrame, float pitchCrazyFrame, float yawCrazyFrame,
   float rollRateCrazyFrame, float pitchRateCrazyFrame, float yawRateCrazyFrame)
 {
   eulerRollActual =
-      (float) 1/sqrt(2.0)*(rollCrazyframe - pitchCrazyFrame);
+      (float) 1/sqrt(2.0)*(rollCrazyFrame - pitchCrazyFrame);
   rollRate =
-      (float) 1/sqrt(2.0)*(rollRateCrazyframe - pitchRateCrazyFrame);
+      (float) 1/sqrt(2.0)*(rollRateCrazyFrame - pitchRateCrazyFrame);
   eulerPitchActual =
-      (float) -1/sqrt(2.0)*(rollCrazyframe + pitchCrazyFrame);
+      (float) -1/sqrt(2.0)*(rollCrazyFrame + pitchCrazyFrame);
   pitchRate =
-      (float) -1/sqrt(2.0)*(rollRateCrazyframe + pitchRateCrazyFrame);
+      (float) -1/sqrt(2.0)*(rollRateCrazyFrame + pitchRateCrazyFrame);
   // yaw are the same in crazyframe and ours
   eulerYawActual = yawCrazyFrame;
   yawRate = yawRateCrazyFrame;

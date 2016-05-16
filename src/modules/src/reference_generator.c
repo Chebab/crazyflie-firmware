@@ -8,13 +8,13 @@
 #include "motors.h"
 #include "system.h"
 #include "commander.h"
-#include "position_estimator_altitude.h"
+//#include "position_estimator_altitude.h"
 
 #include "stabilizer.h"
 
 // TODO find and solve dependencies for commander
 
-float zAccDesired;
+uint16_t zAccDesired;
 float eulerRollDesired;   // Measured roll angle in deg
 float eulerPitchDesired;  // Measured pitch angle in deg
 float eulerYawDesired;    // Measured yaw angle in deg
