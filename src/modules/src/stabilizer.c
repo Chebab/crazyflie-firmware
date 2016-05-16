@@ -91,6 +91,7 @@ static bool isInit;
 static uint16_t limitThrust(int32_t value);
 static void convertAngles(float eulerRollCrazyframe, float eulerPitchCrazyFrame);
 static void LQR(float currentStates[7]);
+static int32_t thrust2PWM(float thrust);
 
 static void stabilizerTask(void* param)
 {
@@ -139,12 +140,10 @@ static void stabilizerTask(void* param)
         xSemaphoreGive(canUseReferenceMutex);
 
         // Set motors depending on the euler angles
-        // TODO: set values based on thrusts from LQR
-        // TODO: find how to transform them into pwm
-        motorPowerM1 = limitThrust(fabs(/* enter thrusts in pwm */));
-        motorPowerM2 = limitThrust(fabs(/* enter thrusts in pwm */));
-        motorPowerM3 = limitThrust(fabs(/* enter thrusts in pwm */));
-        motorPowerM4 = limitThrust(fabs(/* enter thrusts in pwm */));
+        motorPowerM1 = limitThrust(fabs(thrust2PWM(thrusts[0])));
+        motorPowerM2 = limitThrust(fabs(thrust2PWM(thrusts[1])));
+        motorPowerM3 = limitThrust(fabs(thrust2PWM(thrusts[2])));
+        motorPowerM4 = limitThrust(fabs(thrust2PWM(thrusts[3])));
 
         motorsSetRatio(MOTOR_M1, motorPowerM1);
         motorsSetRatio(MOTOR_M2, motorPowerM2);
@@ -241,6 +240,20 @@ static void convertAngles(
   // yaw are the same in crazyframe and ours
   eulerYawActual = yawCrazyFrame;
   yawRate = yawRateCrazyFrame;
+}
+
+// convert thrust to pwm according to article on Bitcraze
+// TODO check if type conversion really is correct
+// TODO round to nearest integer before type casting
+static int32_t thrust2PWM(float thrust)
+{
+  static float a = 0.000409;
+  static float b = 0.1405;
+  static float c = -0.000099;
+
+  thrust = thrust/1000; // make thrust to g
+
+  return (int32_t) -b/(2*a)+sqrt((2*thrust + b -2*c)/(2*a));
 }
 
 static uint16_t limitThrust(int32_t value)
