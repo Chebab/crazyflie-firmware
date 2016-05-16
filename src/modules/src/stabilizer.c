@@ -88,7 +88,7 @@ static float thrusts[4];
 static bool isInit;
 
 
-static uint16_t limitThrust(int32_t value);
+static uint16_t limitThrust(float value);
 static void convertAngles(float eulerRollCrazyframe, float eulerPitchCrazyFrame);
 static void LQR(float currentStates[7]);
 static int32_t thrust2PWM(float thrust);
@@ -253,12 +253,28 @@ static int32_t thrust2PWM(float thrust)
 
   thrust = thrust/9.81; // make thrust to g
 
-  return (int32_t) -b/(2*a)+sqrt((2*thrust + b -2*c)/(2*a));
+  return (int32_t) -b/(2*a)+sqrt((thrust-c)/a + b*b/(4*a*a));
 }
 
-static uint16_t limitThrust(int32_t value)
+
+static uint16_t limitThrust(float value)
 {
-  return limitUint16(value);
+  uint16_t intValue;
+  value = (float) value/9.81; // convert to g
+  if (value <= 0.0f) {
+    intValue = 0;
+  }
+  else if (value => 60.0f) {
+    intValue = 65526;
+  }
+  else
+  {
+    value = 65526.0*value/60.0;
+    intValue = (uint16_t) floor(value + 0.5); // round to nearest integer
+  }
+
+
+  return intValue;
 }
 
 LOG_GROUP_START(stabilizer)
