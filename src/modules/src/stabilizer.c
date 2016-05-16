@@ -101,7 +101,7 @@ static float states[STATE_SIZE]={0,0,0,0,0,0,0};
 static float reference[STATE_SIZE]={0,0,0,0,0,0,0};
 static float thrusts[INPUT_SIZE]={0,0,0,0};
 
-static bool isInit;
+static bool isInit = false;
 
 
 static uint16_t limitThrust(int32_t value);
@@ -124,7 +124,7 @@ static void stabilizerTask(void* param)
 
   while(1)
   {
-    vTaskDelayUntil(&lastWakeTime, F2T(1)); //1Hz before: IMU_UPDATE_FREQ=500Hz
+    vTaskDelayUntil(&lastWakeTime, F2T(IMU_UPDATE_FREQ)); //1Hz before: IMU_UPDATE_FREQ=500Hz
 
     // Magnetometer not yet used more then for logging.
     imu9Read(&gyro, &acc, &mag);
@@ -146,7 +146,7 @@ static void stabilizerTask(void* param)
         // TODO maybe move semaphores to LQR()
         //while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
         //while (!xSemaphoreTake(canUseStateGain, portMAX_DELAY));
-        states[0]=acc.z;
+        states[0]=0;
         states[1]=eulerRollActual;
         states[2]=eulerPitchActual;
         states[3]=eulerYawActual;
@@ -166,10 +166,10 @@ static void stabilizerTask(void* param)
         // TODO: set values based on thrusts from LQR
         // TODO: find how to transform them into pwm
 
-        motorPowerM1 = limitThrust(fabs(thrust2PWM(thrusts[0])));
-        motorPowerM2 = limitThrust(fabs(thrust2PWM(thrusts[1])));
-        motorPowerM3 = limitThrust(fabs(thrust2PWM(thrusts[2])));
-        motorPowerM4 = limitThrust(fabs(thrust2PWM(thrusts[3])));
+        motorPowerM1 = limitThrust(fabs(thrusts[0]));
+        motorPowerM2 = limitThrust(fabs(thrusts[1]));
+        motorPowerM3 = limitThrust(fabs(thrusts[2]));
+        motorPowerM4 = limitThrust(fabs(thrusts[3]));
 
 
         motorsSetRatio(MOTOR_M1, motorPowerM1);
