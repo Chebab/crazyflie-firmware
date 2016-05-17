@@ -171,12 +171,12 @@ static void stabilizerTask(void* param)
         motorPowerM3 = limitThrust(fabs(thrusts[2]));
         motorPowerM4 = limitThrust(fabs(thrusts[3]));
 
-
+/*
         motorsSetRatio(MOTOR_M1, motorPowerM1);
         motorsSetRatio(MOTOR_M2, motorPowerM2);
         motorsSetRatio(MOTOR_M3, motorPowerM3);
         motorsSetRatio(MOTOR_M4, motorPowerM4);
-
+*/
 
         attitudeCounter = 0;
       }
@@ -269,17 +269,19 @@ static void convertAngles(
   float rollCrazyFrame, float pitchCrazyFrame, float yawCrazyFrame,
   float rollRateCrazyFrame, float pitchRateCrazyFrame, float yawRateCrazyFrame)
 {
+  const float degToRad = 3.14/180;
+  const float k =1/sqrt(2.0)*degToRad;
   eulerRollActual =
-      (float) 1/sqrt(2.0)*(rollCrazyFrame - pitchCrazyFrame);
+      (float) k*(rollCrazyFrame - pitchCrazyFrame);
   rollRate =
-      (float) 1/sqrt(2.0)*(rollRateCrazyFrame - pitchRateCrazyFrame);
+      (float) k*(rollRateCrazyFrame - pitchRateCrazyFrame);
   eulerPitchActual =
-      (float) -1/sqrt(2.0)*(rollCrazyFrame + pitchCrazyFrame);
+      (float) -k*(rollCrazyFrame + pitchCrazyFrame);
   pitchRate =
-      (float) -1/sqrt(2.0)*(rollRateCrazyFrame + pitchRateCrazyFrame);
+      (float) -k*(rollRateCrazyFrame + pitchRateCrazyFrame);
   // yaw are the same in crazyframe and ours
-  eulerYawActual = yawCrazyFrame;
-  yawRate = yawRateCrazyFrame;
+  eulerYawActual = yawCrazyFrame*degToRad;
+  yawRate = yawRateCrazyFrame*degToRad;
 }
 
 // convert thrust to pwm according to article on Bitcraze
@@ -304,12 +306,13 @@ static uint16_t limitThrust(float value)
   if (value <= 0.0f) {
     intValue = 0;
   }
-  else if (value => 60.0f) {
+  else if (value >= 60.0f) {
     intValue = 65526;
   }
   else
   {
-    value = 65526.0*value/60.0;
+    float scale = (value/60.0);
+    value = 65526.0*scale;
     intValue = (uint16_t) floor(value + 0.5); // round to nearest integer
   }
 
