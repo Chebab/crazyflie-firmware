@@ -166,10 +166,10 @@ static void stabilizerTask(void* param)
         // TODO: set values based on thrusts from LQR
         // TODO: find how to transform them into pwm
 
-        motorPowerM1 = limitThrust(fabs(thrusts[0]));
-        motorPowerM2 = limitThrust(fabs(thrusts[1]));
-        motorPowerM3 = limitThrust(fabs(thrusts[2]));
-        motorPowerM4 = limitThrust(fabs(thrusts[3]));
+        motorPowerM1 = limitThrust(thrusts[0]);
+        motorPowerM2 = limitThrust(thrusts[1]);
+        motorPowerM3 = limitThrust(thrusts[2]);
+        motorPowerM4 = limitThrust(thrusts[3]);
 
 
         motorsSetRatio(MOTOR_M1, motorPowerM1);
@@ -309,7 +309,7 @@ static uint16_t limitThrust(float value)
   }
   else
   {
-    value = 65526.0*value/60.0;
+    value = 65526.0*(value/60.0);
     intValue = (uint16_t) floor(value + 0.5); // round to nearest integer
   }
 
