@@ -165,23 +165,29 @@ static void stabilizerTask(void* param)
         // Set motors depending on the euler angles
         // TODO: set values based on thrusts from LQR
         // TODO: find how to transform them into pwm
+/*
+        motorPowerM1 = limitThrust(0.027*9.81/4.0);
+        motorPowerM2 = limitThrust(0.027*9.81/4.0);
+        motorPowerM3 = limitThrust(0.027*9.81/4.0);
+        motorPowerM4 = limitThrust(0.027*9.81/4.0);
+*/
 
         motorPowerM1 = limitThrust(thrusts[0]);
         motorPowerM2 = limitThrust(thrusts[1]);
         motorPowerM3 = limitThrust(thrusts[2]);
         motorPowerM4 = limitThrust(thrusts[3]);
-
-/*      motorPowerM1 = limitThrust(fabs(thrusts[0]));
+/*
+     motorPowerM1 = limitThrust(fabs(thrusts[0]));
         motorPowerM2 = limitThrust(fabs(thrusts[1]));
         motorPowerM3 = limitThrust(fabs(thrusts[2]));
         motorPowerM4 = limitThrust(fabs(thrusts[3]));
         */
-/*
+
         motorsSetRatio(MOTOR_M1, motorPowerM1);
         motorsSetRatio(MOTOR_M2, motorPowerM2);
         motorsSetRatio(MOTOR_M3, motorPowerM3);
         motorsSetRatio(MOTOR_M4, motorPowerM4);
-*/
+
 
         attitudeCounter = 0;
       }
@@ -267,8 +273,8 @@ static void LQR(float currentStates[7])
   int state;
 
   for (out=0; out<4; out++) {
-    //thrusts[out] = 0.027*9.81/4.0;
-    thrusts[out]=0;
+    thrusts[out] = 0.027*9.81/4.0;
+    //thrusts[out]=0;
     for (state=0; state<7; state++) {
       thrusts[out] += Kr[out][state]*reference[state]
                       -K[out][state]*currentStates[state];
@@ -314,7 +320,7 @@ static int32_t thrust2PWM(float thrust)
 static uint16_t limitThrust(float value)
 {
   uint16_t intValue;
-  value = (float) value/9.81; // convert to g
+  value = (float) (value/9.81f)*1000.0; // convert to g
   if (value <= 0.0f) {
     intValue = 0;
   }
@@ -323,9 +329,9 @@ static uint16_t limitThrust(float value)
   }
   else
   {
-    float scale = (value/60.0);
-    value = 65526.0*scale;
-    intValue = (uint16_t) floor(value + 0.5); // round to nearest integer
+    float scale = (value/60.0f);
+    value = 65526.0f*scale;
+    intValue = (uint16_t) floor(value + 0.5f); // round to nearest integer
   }
 
 
@@ -363,3 +369,13 @@ LOG_ADD(LOG_INT32, m1, &motorPowerM1)
 LOG_ADD(LOG_INT32, m2, &motorPowerM2)
 LOG_ADD(LOG_INT32, m3, &motorPowerM3)
 LOG_GROUP_STOP(motor)
+
+LOG_GROUP_START(states)
+LOG_ADD(LOG_FLOAT, x1, &states[0])
+LOG_ADD(LOG_FLOAT, x2, &states[1])
+LOG_ADD(LOG_FLOAT, x3, &states[2])
+LOG_ADD(LOG_FLOAT, x4, &states[3])
+LOG_ADD(LOG_FLOAT, x5, &states[4])
+LOG_ADD(LOG_FLOAT, x6, &states[5])
+LOG_ADD(LOG_FLOAT, x7, &states[6])
+LOG_GROUP_STOP(mag)
