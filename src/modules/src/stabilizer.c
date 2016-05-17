@@ -64,8 +64,7 @@
 #define ALTHOLD_UPDATE_RATE_DIVIDER  5
 #define ALTHOLD_UPDATE_DT  (float)(1.0 / (IMU_UPDATE_FREQ / ALTHOLD_UPDATE_RATE_DIVIDER))   // 100hz
 
-#define STATE_SIZE 7
-#define INPUT_SIZE 4
+
 
 static Axis3f gyro; // Gyro axis data in deg/s
 static Axis3f acc;  // Accelerometer axis data in mG
@@ -97,8 +96,8 @@ uint32_t motorPowerM2;  // Motor 2 power output (16bit value used: 0 - 65535)
 uint32_t motorPowerM3;  // Motor 3 power output (16bit value used: 0 - 65535)
 uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
 
+
 static float states[STATE_SIZE]={0,0,0,0,0,0,0};
-static float reference[STATE_SIZE]={0,0,0,0,0,0,0};
 static float thrusts[INPUT_SIZE]={0,0,0,0};
 
 static bool isInit = false;
@@ -187,12 +186,12 @@ static void stabilizerTask(void* param)
         motorPowerM3 = limitThrust(fabs(thrusts[2]));
         motorPowerM4 = limitThrust(fabs(thrusts[3]));
         */
-
+/*
         motorsSetRatio(MOTOR_M1, motorPowerM1);
         motorsSetRatio(MOTOR_M2, motorPowerM2);
         motorsSetRatio(MOTOR_M3, motorPowerM3);
         motorsSetRatio(MOTOR_M4, motorPowerM4);
-
+*/
 
         attitudeCounter = 0;
       }
@@ -251,7 +250,7 @@ static void LQR(float currentStates[7])
 };
 
 
-  float Kr[4][7] = {{-0.431383, 0.000000, 0.112523, 0.000117, 0.000000, 0.036034, 0.000038 }, 
+  float Kr[4][7] = {{-0.431383, 0.000000, 0.112523, 0.000117, 0.000000, 0.036034, 0.000038 },
 {-0.431383, -0.109326, -0.000000, -0.000117, -0.035010, -0.000000, -0.000038 },
 {-0.431383, 0.000000, -0.112523, 0.000117, 0.000000, -0.036034, 0.000038 },
 {-0.431383, 0.109326, -0.000000, -0.000117, 0.035010, -0.000000, -0.000038}
@@ -387,4 +386,10 @@ LOG_ADD(LOG_FLOAT, x4, &states[3])
 LOG_ADD(LOG_FLOAT, x5, &states[4])
 LOG_ADD(LOG_FLOAT, x6, &states[5])
 LOG_ADD(LOG_FLOAT, x7, &states[6])
-LOG_GROUP_STOP(mag)
+LOG_GROUP_STOP(states)
+LOG_GROUP_START(reference)
+LOG_ADD(LOG_FLOAT, zvel, &reference[0])
+LOG_ADD(LOG_FLOAT, roll, &reference[1])
+LOG_ADD(LOG_FLOAT, pitch, &reference[2])
+LOG_ADD(LOG_FLOAT, yaw, &reference[3])
+LOG_GROUP_STOP(reference)

@@ -4,12 +4,10 @@
 // unclear what these are used for
 #include <stdbool.h>
 #include <stdint.h>
+#include "stabilizer.h"
 
-extern uint16_t zAccDesired;
-extern float eulerRollDesired;   // Measured roll angle in deg
-extern float eulerPitchDesired;  // Measured pitch angle in deg
-extern float eulerYawDesired;    // Measured yaw angle in deg
 
+extern float reference[STATE_SIZE];
 void referenceGeneratorInit(void);
 
 bool referenceGeneratorTest(void);

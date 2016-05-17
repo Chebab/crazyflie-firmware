@@ -196,7 +196,7 @@ void systemTask(void *arg)
   stabilizerInit();
   //------ New tasks -----
   //modeSwitchInit();
-  //referenceGeneratorInit();
+  referenceGeneratorInit();
   //------------
 #ifdef PLATFORM_CF2
   deckInit();
