@@ -171,12 +171,12 @@ static void stabilizerTask(void* param)
         motorPowerM3 = limitThrust(fabs(thrusts[2]));
         motorPowerM4 = limitThrust(fabs(thrusts[3]));
 
-/*
+
         motorsSetRatio(MOTOR_M1, motorPowerM1);
         motorsSetRatio(MOTOR_M2, motorPowerM2);
         motorsSetRatio(MOTOR_M3, motorPowerM3);
         motorsSetRatio(MOTOR_M4, motorPowerM4);
-*/
+
 
         attitudeCounter = 0;
       }
