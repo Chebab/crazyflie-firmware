@@ -30,5 +30,6 @@
 
 void positionEstimate(estimate_t* estimate, float asl, float dt);
 void positionUpdateVelocity(float accWZ, float dt);
+float getEstimatedZvelocity();
 
 #endif /* POSITION_ESTIMATOR_H_ */

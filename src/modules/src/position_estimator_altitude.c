@@ -74,6 +74,10 @@ static void positionUpdateVelocityInternal(float accWZ, float dt, struct state_s
   state->velocityZ += deadband(accWZ, state->vAccDeadband) * dt * G;
   state->velocityZ *= state->velZAlpha;
 }
+// Added function to get estimated z-velocity /Made by Group 23
+float getEstimatedZvelocity(){
+  return state.velocityZ;
+}
 
 LOG_GROUP_START(posEstimatorAlt)
 LOG_ADD(LOG_FLOAT, estimatedZ, &state.estimatedZ)

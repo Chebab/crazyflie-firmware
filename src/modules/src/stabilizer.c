@@ -137,6 +137,10 @@ static void stabilizerTask(void* param)
         sensfusion6UpdateQ(gyro.x, gyro.y, gyro.z, acc.x, acc.y, acc.z, ATTITUDE_UPDATE_DT);
         sensfusion6GetEulerRPY(&eulerRollActual, &eulerPitchActual, &eulerYawActual);
 
+        float accWZ = sensfusion6GetAccZWithoutGravity(acc.x,acc.y,acc.z);
+
+        positionUpdateVelocity(accWZ,ATTITUDE_UPDATE_DT);
+
         // convert from the crazyflie frame to ours
         // TODO find out if gyro.x are actual values in degrees or radians
         convertAngles(eulerRollActual, eulerPitchActual, eulerYawActual,
@@ -146,7 +150,7 @@ static void stabilizerTask(void* param)
         // TODO maybe move semaphores to LQR()
         //while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
         //while (!xSemaphoreTake(canUseStateGain, portMAX_DELAY));
-        states[0]=0;
+        states[0]=-getEstimatedZvelocity();
         states[1]=eulerRollActual;
         states[2]=eulerPitchActual;
         states[3]=eulerYawActual;
@@ -172,10 +176,11 @@ static void stabilizerTask(void* param)
         motorPowerM4 = limitThrust(0.027*9.81/4.0);
 */
 
-        motorPowerM1 = limitThrust(thrusts[0]);
-        motorPowerM2 = limitThrust(thrusts[1]);
-        motorPowerM3 = limitThrust(thrusts[2]);
-        motorPowerM4 = limitThrust(thrusts[3]);
+        motorPowerM1 = limitThrust(thrust2PWM(thrusts[0]));
+        motorPowerM2 = limitThrust(thrust2PWM(thrusts[1]));
+        motorPowerM3 = limitThrust(thrust2PWM(thrusts[2]));
+        motorPowerM4 = limitThrust(thrust2PWM(thrusts[3]));
+
 /*
      motorPowerM1 = limitThrust(fabs(thrusts[0]));
         motorPowerM2 = limitThrust(fabs(thrusts[1]));
@@ -311,28 +316,32 @@ static int32_t thrust2PWM(float thrust)
   static float b = 0.1405;
   static float c = -0.000099;
 
-  thrust = thrust/9.81; // make thrust to g
-
-  return (int32_t) -b/(2*a)+sqrt((thrust-c)/a + b*b/(4*a*a));
+  thrust = (thrust/9.81f)*1000.0f; // make thrust to g
+  if (thrust <= 0.0f) {
+    thrust = 0.0f;
+  }
+  return (int32_t) (-b/(2*a)+sqrt((thrust-c)/a + b*b/(4*a*a)))*65526.0f/256.0f;
 }
 
 
 static uint16_t limitThrust(float value)
 {
   uint16_t intValue;
-  value = (float) (value/9.81f)*1000.0; // convert to g
+  //value = (float) (value/9.81f)*1000.0; // convert to g
   if (value <= 0.0f) {
     intValue = 0;
   }
-  else if (value >= 60.0f) {
+  else if (value >= 65526.0f) {
     intValue = 65526;
   }
+
   else
   {
-    float scale = (value/60.0f);
-    value = 65526.0f*scale;
+    //float scale = (value/60.0f);
+    //value = 65526.0f*scale;
     intValue = (uint16_t) floor(value + 0.5f); // round to nearest integer
   }
+
 
 
   return intValue;
