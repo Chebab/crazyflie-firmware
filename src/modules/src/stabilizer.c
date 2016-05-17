@@ -171,12 +171,17 @@ static void stabilizerTask(void* param)
         motorPowerM3 = limitThrust(thrusts[2]);
         motorPowerM4 = limitThrust(thrusts[3]);
 
-
+/*      motorPowerM1 = limitThrust(fabs(thrusts[0]));
+        motorPowerM2 = limitThrust(fabs(thrusts[1]));
+        motorPowerM3 = limitThrust(fabs(thrusts[2]));
+        motorPowerM4 = limitThrust(fabs(thrusts[3]));
+        */
+/*
         motorsSetRatio(MOTOR_M1, motorPowerM1);
         motorsSetRatio(MOTOR_M2, motorPowerM2);
         motorsSetRatio(MOTOR_M3, motorPowerM3);
         motorsSetRatio(MOTOR_M4, motorPowerM4);
-
+*/
 
         attitudeCounter = 0;
       }
@@ -225,7 +230,7 @@ static void LQR_new(float *currentStates,float* reference,float *output,float **
 
 static void LQR(float currentStates[7])
 {
-  ;
+
 
   //if (isAgressive) {
     float K[4][7] = {{-0.464333, -0.000000, 0.224049, 0.000235, -0.000000, 0.071303, 0.000075 },
@@ -260,7 +265,10 @@ static void LQR(float currentStates[7])
 
   int out;
   int state;
+
   for (out=0; out<4; out++) {
+    //thrusts[out] = 0.027*9.81/4.0;
+    thrusts[out]=0;
     for (state=0; state<7; state++) {
       thrusts[out] += Kr[out][state]*reference[state]
                       -K[out][state]*currentStates[state];
@@ -276,16 +284,16 @@ static void convertAngles(
   const float degToRad = 3.14/180;
   const float k =1/sqrt(2.0)*degToRad;
   eulerRollActual =
-      (float) k*(rollCrazyFrame - pitchCrazyFrame);
+      (float) k*(rollCrazyFrame + pitchCrazyFrame);
   rollRate =
-      (float) k*(rollRateCrazyFrame - pitchRateCrazyFrame);
+      (float) k*(rollRateCrazyFrame + pitchRateCrazyFrame);
   eulerPitchActual =
-      (float) -k*(rollCrazyFrame + pitchCrazyFrame);
+      (float) -k*(rollCrazyFrame - pitchCrazyFrame);
   pitchRate =
-      (float) -k*(rollRateCrazyFrame + pitchRateCrazyFrame);
+      (float) -k*(rollRateCrazyFrame - pitchRateCrazyFrame);
   // yaw are the same in crazyframe and ours
-  eulerYawActual = yawCrazyFrame*degToRad;
-  yawRate = yawRateCrazyFrame*degToRad;
+  eulerYawActual = -yawCrazyFrame*degToRad;
+  yawRate = -yawRateCrazyFrame*degToRad;
 }
 
 // convert thrust to pwm according to article on Bitcraze
