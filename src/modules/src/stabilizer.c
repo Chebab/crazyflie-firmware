@@ -171,12 +171,12 @@ static void stabilizerTask(void* param)
         motorPowerM3 = limitThrust(thrusts[2]);
         motorPowerM4 = limitThrust(thrusts[3]);
 
-
+/*
         motorsSetRatio(MOTOR_M1, motorPowerM1);
         motorsSetRatio(MOTOR_M2, motorPowerM2);
         motorsSetRatio(MOTOR_M3, motorPowerM3);
         motorsSetRatio(MOTOR_M4, motorPowerM4);
-
+*/
 
         attitudeCounter = 0;
       }
@@ -228,16 +228,20 @@ static void LQR(float currentStates[7])
   ;
 
   //if (isAgressive) {
-    float K[4][7] = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
-{-0.481824, -0.424516, 0.000000, -0.000472, -0.134684, 0.000000, -0.000150 },
-{-0.481824, -0.000000, -0.436087, 0.000472, -0.000000, -0.138356, 0.000150 },
-{-0.481824, 0.424516, 0.000000, -0.000472, 0.134684, 0.000000, -0.000150}
+    float K[4][7] = {{-0.464333, -0.000000, 0.224049, 0.000235, -0.000000, 0.071303, 0.000075 },
+{-0.464333, -0.217775, 0.000000, -0.000235, -0.069306, 0.000000, -0.000075 },
+{-0.464333, -0.000000, -0.224049, 0.000235, -0.000000, -0.071303, 0.000075 },
+{-0.464333, 0.217775, 0.000000, -0.000235, 0.069306, 0.000000, -0.000075}
 };
-    float Kr[4][7] = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
-{-0.481824, -0.424516, 0.000000, -0.000472, -0.134684, 0.000000, -0.000150 },
-{-0.481824, -0.000000, -0.436087, 0.000472, -0.000000, -0.138356, 0.000150 },
-{-0.481824, 0.424516, 0.000000, -0.000472, 0.134684, 0.000000, -0.000150}
+
+
+  float Kr[4][7] = {{-0.464333, -0.000000, 0.224049, 0.000235, -0.000000, 0.071303, 0.000075 },
+{-0.464333, -0.217775, 0.000000, -0.000235, -0.069306, 0.000000, -0.000075 },
+{-0.464333, -0.000000, -0.224049, 0.000235, -0.000000, -0.071303, 0.000075 },
+{-0.464333, 0.217775, 0.000000, -0.000235, 0.069306, 0.000000, -0.000075}
 };
+
+
   //}
   /*
   else // TODO change the matrixes for the diferent modes
@@ -269,17 +273,19 @@ static void convertAngles(
   float rollCrazyFrame, float pitchCrazyFrame, float yawCrazyFrame,
   float rollRateCrazyFrame, float pitchRateCrazyFrame, float yawRateCrazyFrame)
 {
+  const float degToRad = 3.14/180;
+  const float k =1/sqrt(2.0)*degToRad;
   eulerRollActual =
-      (float) 1/sqrt(2.0)*(rollCrazyFrame - pitchCrazyFrame);
+      (float) k*(rollCrazyFrame - pitchCrazyFrame);
   rollRate =
-      (float) 1/sqrt(2.0)*(rollRateCrazyFrame - pitchRateCrazyFrame);
+      (float) k*(rollRateCrazyFrame - pitchRateCrazyFrame);
   eulerPitchActual =
-      (float) -1/sqrt(2.0)*(rollCrazyFrame + pitchCrazyFrame);
+      (float) -k*(rollCrazyFrame + pitchCrazyFrame);
   pitchRate =
-      (float) -1/sqrt(2.0)*(rollRateCrazyFrame + pitchRateCrazyFrame);
+      (float) -k*(rollRateCrazyFrame + pitchRateCrazyFrame);
   // yaw are the same in crazyframe and ours
-  eulerYawActual = yawCrazyFrame;
-  yawRate = yawRateCrazyFrame;
+  eulerYawActual = yawCrazyFrame*degToRad;
+  yawRate = yawRateCrazyFrame*degToRad;
 }
 
 // convert thrust to pwm according to article on Bitcraze
@@ -304,12 +310,13 @@ static uint16_t limitThrust(float value)
   if (value <= 0.0f) {
     intValue = 0;
   }
-  else if (value => 60.0f) {
+  else if (value >= 60.0f) {
     intValue = 65526;
   }
   else
   {
-    value = 65526.0*(value/60.0);
+    float scale = (value/60.0);
+    value = 65526.0*scale;
     intValue = (uint16_t) floor(value + 0.5); // round to nearest integer
   }
 
