@@ -33,6 +33,8 @@
 
 #define MIN_THRUST  1000
 #define MAX_THRUST  60000
+#define MAX_VELZ 0.1
+#define MIN_VELZ -0.1
 #define COMMANDER_CACH_TIMEOUT  M2T(500)
 
 /**
@@ -267,6 +269,30 @@ void commanderGetThrust(uint16_t* thrust)
       *thrust = MAX_THRUST;
     }
   }
+}
+
+void commanderGetZVelocity(float* velZ)
+{
+  uint16_t rawVelocity = commanderGetActiveThrust();
+  int16_t velocityRatio = (rawVelocity-32768)/32768;
+
+  if (thrustLocked)
+  {
+    *velZ = 0.0f;
+  }
+  else
+  {
+    if (velocityRatio>1) {
+      *velZ = MAX_VELZ;
+    }
+    else if (velocityRatio<-1) {
+      *velZ = MIN_VELZ;
+    }
+    else {
+      *velZ = (float) MAX_VELZ*velocityRatio;
+    }
+  }
+
 }
 
 YawModeType commanderGetYawMode(void)
