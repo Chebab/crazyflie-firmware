@@ -16,7 +16,7 @@
 
 // TODO find and solve dependencies for commander
 
-static uint16_t zAccDesired;
+static float zVelDesired;
 static float eulerRollDesired;   // Measured roll angle in deg
 static float eulerPitchDesired;  // Measured pitch angle in deg
 static float eulerYawDesired;    // Measured yaw angle in deg
@@ -46,14 +46,15 @@ static void referenceGeneratorTask(void* param)
     // actual code for task
     if (imu6IsCalibrated())
     {
-      //while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
+      while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
 
       // read references from controller
       commanderGetRPY(&eulerRollDesired, &eulerPitchDesired, &eulerYawDesired);
       //zAccDesired = 0;
-      commanderGetThrust(&zAccDesired);
+      //commanderGetThrust(&zAccDesired);
       const float degToRad = 3.14f/180.0f;
-      reference[0] = 0;
+      commanderGetZVelocity(&zVelDesired);
+      reference[0] = -zVelDesired;
       reference[1] = eulerRollDesired*degToRad;
       reference[2] = eulerPitchDesired*degToRad;
       reference[3] = eulerYawDesired*degToRad;
@@ -63,7 +64,7 @@ static void referenceGeneratorTask(void* param)
       //commanderGetThrust(&zAccDesired);
       // TODO there is some kind of stateestimator for z and vz, meybe we can use them
       //release reference mutex
-      //xSemaphoreGive(canUseReferenceMutex);
+      xSemaphoreGive(canUseReferenceMutex);
     }
   }
 }
@@ -93,6 +94,6 @@ bool referenceGeneratorTest(void)
 
   return pass;
 }
-LOG_GROUP_START(accz)
-LOG_ADD(LOG_INT32, accz, &zAccDesired)
-LOG_GROUP_STOP(accz)
+LOG_GROUP_START(velz)
+LOG_ADD(LOG_FLOAT, velz, &zVelDesired)
+LOG_GROUP_STOP(velz)

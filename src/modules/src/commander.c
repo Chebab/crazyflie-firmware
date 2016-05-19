@@ -274,7 +274,7 @@ void commanderGetThrust(uint16_t* thrust)
 void commanderGetZVelocity(float* velZ)
 {
   uint16_t rawVelocity = commanderGetActiveThrust();
-  int16_t velocityRatio = (rawVelocity-32768)/32768;
+  float velocityRatio = ((float)rawVelocity-32768.0f)/32768.0f;
 
   if (thrustLocked)
   {
@@ -282,10 +282,10 @@ void commanderGetZVelocity(float* velZ)
   }
   else
   {
-    if (velocityRatio>1) {
+    if (velocityRatio>1.0f) {
       *velZ = MAX_VELZ;
     }
-    else if (velocityRatio<-1) {
+    else if (velocityRatio<-1.0f) {
       *velZ = MIN_VELZ;
     }
     else {

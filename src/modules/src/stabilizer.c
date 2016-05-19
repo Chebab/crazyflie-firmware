@@ -147,7 +147,7 @@ static void stabilizerTask(void* param)
 
         // try to take the semaphore until it is possible
         // TODO maybe move semaphores to LQR()
-        //while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
+        while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
         //while (!xSemaphoreTake(canUseStateGain, portMAX_DELAY));
         states[0]=-getEstimatedZvelocity();
         states[1]=eulerRollActual;
@@ -163,7 +163,7 @@ static void stabilizerTask(void* param)
         LQR(states); // uses the reference and is therefore inside semaphore protection
 
         //xSemaphoreGive(canUseStateGainMutex);
-        //xSemaphoreGive(canUseReferenceMutex);
+        xSemaphoreGive(canUseReferenceMutex);
 
         // Set motors depending on the euler angles
         // TODO: set values based on thrusts from LQR
@@ -186,12 +186,12 @@ static void stabilizerTask(void* param)
         motorPowerM3 = limitThrust(fabs(thrusts[2]));
         motorPowerM4 = limitThrust(fabs(thrusts[3]));
         */
-/*
+
         motorsSetRatio(MOTOR_M1, motorPowerM1);
         motorsSetRatio(MOTOR_M2, motorPowerM2);
         motorsSetRatio(MOTOR_M3, motorPowerM3);
         motorsSetRatio(MOTOR_M4, motorPowerM4);
-*/
+
 
         attitudeCounter = 0;
       }

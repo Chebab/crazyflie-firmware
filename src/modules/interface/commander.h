@@ -70,6 +70,7 @@ typedef enum
 
 void commanderInit(void);
 bool commanderTest(void);
+void commanderGetZVelocity(float*);
 uint32_t commanderGetInactivityTime(void);
 void commanderGetRPY(float* eulerRollDesired, float* eulerPitchDesired, float* eulerYawDesired);
 void commanderGetRPYType(RPYType* rollType, RPYType* pitchType, RPYType* yawType);
