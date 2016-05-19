@@ -314,11 +314,13 @@ static int32_t thrust2PWM(float thrust)
   static float a = 0.000409;
   static float b = 0.1405;
   static float c = -0.000099;
+  static float pwmCorrection = 2.0;
 
   thrust = (thrust/9.81f)*1000.0f; // make thrust to g
   if (thrust <= 0.0f) {
     thrust = 0.0f;
   }
+  thrust = thrust*pwmCorrection;
   return (int32_t) (-b/(2*a)+sqrt((thrust-c)/a + b*b/(4*a*a)))*65526.0f/256.0f;
 }
 
