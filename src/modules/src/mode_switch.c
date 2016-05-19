@@ -8,9 +8,13 @@
 #include "motors.h"
 #include "system.h"
 #include "stabilizer.h"
+#include "log.h"
+#include "param.h"
 
 bool isAgressive = false;
 static bool isInit = false;
+int32_t changeMode = 0;
+
 
 static void modeSwitchTask(void* param)
 {
@@ -31,10 +35,14 @@ static void modeSwitchTask(void* param)
     // other possibility
     // vTaskSuspend() will be invoked again by vTaskResume()
 
-    // actual code for task
-    while (!xSemaphoreTake(canUseStateGainMutex, portMAX_DELAY));
-      // TODO switch isAggressive on and off dependent on user inputs
-    xSemaphoreGive(canUseStateGainMutex);
+    if(changeMode){
+      while (!xSemaphoreTake(canUseStateGainMutex, portMAX_DELAY));
+      isEco = !isEco;
+      changeMode=0;
+      xSemaphoreGive(canUseStateGainMutex);
+    }
+
+
   }
 }
 
@@ -58,3 +66,7 @@ bool modeSwitchTest(void)
 
   return pass;
 }
+
+PARAM_GROUP_START(setMode)
+PARAM_ADD(PARAM_INT32, changeMode, &changeMode)
+PARAM_GROUP_STOP(setMode)

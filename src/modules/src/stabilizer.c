@@ -77,6 +77,18 @@ static float rollRate;
 static float pitchRate;
 static float yawRate;
 
+// Controller matrices
+static float K_agg[INPUT_SIZE][STATE_SIZE] = {{-0.431383, 0.000000, 0.112523, 0.000117, 0.000000, 0.036034, 0.000038 },
+{-0.431383, -0.109326, -0.000000, -0.000117, -0.035010, -0.000000, -0.000038 },
+{-0.431383, 0.000000, -0.112523, 0.000117, 0.000000, -0.036034, 0.000038 },
+{-0.431383, 0.109326, -0.000000, -0.000117, 0.035010, -0.000000, -0.000038}
+};
+static float K_eco[INPUT_SIZE][STATE_SIZE] = {{-0.431383, 0.000000, 0.112523, 0.000117, 0.000000, 0.036034, 0.000038 },
+{-0.431383, -0.109326, -0.000000, -0.000117, -0.035010, -0.000000, -0.000038 },
+{-0.431383, 0.000000, -0.112523, 0.000117, 0.000000, -0.036034, 0.000038 },
+{-0.431383, 0.109326, -0.000000, -0.000117, 0.035010, -0.000000, -0.000038}
+};
+
 uint16_t actuatorThrust;  // Actuator output for thrust base
 
 uint32_t motorPowerM1;  // Motor 1 power output (16bit value used: 0 - 65535)
@@ -84,6 +96,10 @@ uint32_t motorPowerM2;  // Motor 2 power output (16bit value used: 0 - 65535)
 uint32_t motorPowerM3;  // Motor 3 power output (16bit value used: 0 - 65535)
 uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
 
+//int32_t modeSwitch = 0;
+float pwmCorrection= 3.5f;
+
+bool isEco = false;
 
 static float states[STATE_SIZE]={0,0,0,0,0,0,0};
 static float thrusts[INPUT_SIZE]={0,0,0,0};
@@ -130,13 +146,16 @@ static void stabilizerTask(void* param)
 
         // convert from the crazyflie frame to ours
         // TODO find out if gyro.x are actual values in degrees or radians
+        //Axis3f temp = gyro;
+        //gyro.x = temp.y;
+        //gyro.y = temp.x;
         convertAngles(eulerRollActual, eulerPitchActual, eulerYawActual,
-          gyro.x, gyro.y, gyro.z);
+          gyro.x, -gyro.y, gyro.z);
 
         // try to take the semaphore until it is possible
         // TODO maybe move semaphores to LQR()
-        while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
-        //while (!xSemaphoreTake(canUseStateGain, portMAX_DELAY));
+
+        /*
         states[0]=-getEstimatedZvelocity();
         states[1]=eulerRollActual;
         states[2]=eulerPitchActual;
@@ -144,14 +163,14 @@ static void stabilizerTask(void* param)
         states[4]=rollRate;
         states[5]=pitchRate;
         states[6]=yawRate;
-
+*/
         //states = {acc.z,eulerRollActual, eulerPitchActual, eulerYawActual,
           //rollRate, pitchRate, yawRate}; // TODO make shure this are all correct types and units
         // TODO: remember that angles are in degrees?
         LQR(states); // uses the reference and is therefore inside semaphore protection
 
-        //xSemaphoreGive(canUseStateGainMutex);
-        xSemaphoreGive(canUseReferenceMutex);
+
+
 
         // Set motors depending on the euler angles
         // TODO: set values based on thrusts from LQR
@@ -174,6 +193,14 @@ static void stabilizerTask(void* param)
         motorPowerM3 = limitThrust(fabs(thrusts[2]));
         motorPowerM4 = limitThrust(fabs(thrusts[3]));
         */
+        /*
+        if(modeSwitch){
+          motorsSetRatio(MOTOR_M1, limitThrust(5000.0f));
+        }
+        else{
+          motorsSetRatio(MOTOR_M1, limitThrust(0.0f));
+
+        }*/
 
         motorsSetRatio(MOTOR_M1, motorPowerM1);
         motorsSetRatio(MOTOR_M2, motorPowerM2);
@@ -215,7 +242,7 @@ bool stabilizerTest(void)
 
   return pass;
 }
-/*
+
 static void LQR_new(float *currentStates,float* reference,float *output,float **K, float **Kr){
   int i = 0;
   int j = 0;
@@ -225,47 +252,31 @@ static void LQR_new(float *currentStates,float* reference,float *output,float **
     }
   }
 }
-*/
 
 static void LQR(float currentStates[7])
 {
 
-
-  //if (isAgressive) {
-  float K[4][7] = {{-0.431383, -0.000000, 0.035819, 0.000037, -0.000000, 0.035962, 0.000037 },
-{-0.431383, -0.034797, -0.000000, -0.000037, -0.034936, -0.000000, -0.000037 },
-{-0.431383, -0.000000, -0.035819, 0.000037, -0.000000, -0.035962, 0.000037 },
-{-0.431383, 0.034797, -0.000000, -0.000037, 0.034936, -0.000000, -0.000037}
-};
-
-
-  //}
-  /*
-  else // TODO change the matrixes for the diferent modes
-  {
-    K = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
-{-0.481824, -0.424516, 0.000000, -0.000472, -0.134684, 0.000000, -0.000150 },
-{-0.481824, -0.000000, -0.436087, 0.000472, -0.000000, -0.138356, 0.000150 },
-{-0.481824, 0.424516, 0.000000, -0.000472, 0.134684, 0.000000, -0.000150}
-};
-    Kr = {{-0.481824, -0.000000, 0.436087, 0.000472, -0.000000, 0.138356, 0.000150 },
-{-0.481824, -0.424516, 0.000000, -0.000472, -0.134684, 0.000000, -0.000150 },
-{-0.481824, -0.000000, -0.436087, 0.000472, -0.000000, -0.138356, 0.000150 },
-{-0.481824, 0.424516, 0.000000, -0.000472, 0.134684, 0.000000, -0.000150}
-};
-  }*/
-
+  float (*K)[4][7];
+  while (!xSemaphoreTake(canUseStateGainMutex, portMAX_DELAY));
+  if(isEco){
+    K = &K_eco;
+  }
+  else{
+    K = &K_agg;
+  }
+  xSemaphoreGive(canUseStateGainMutex);
+  //float K[4][7] = K_agg;
   int out;
   int state;
-
+  while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
   for (out=0; out<4; out++) {
     thrusts[out] = 0.027*9.81/4.0;
     //thrusts[out]=0;
     for (state=0; state<7; state++) {
-      thrusts[out] += K[out][state]*(reference[state]-currentStates[state]);
+      thrusts[out] += (*K)[out][state]*(reference[state]-currentStates[state]);
     }
   }
-
+  xSemaphoreGive(canUseReferenceMutex);
 }
 
 static void convertAngles(
@@ -295,7 +306,7 @@ static int32_t thrust2PWM(float thrust)
   static float a = 0.000409;
   static float b = 0.1405;
   static float c = -0.000099;
-  static float pwmCorrection = 2.0;
+  //static float pwmCorrection = 2.0;
 
   thrust = (thrust/9.81f)*1000.0f; // make thrust to g
   if (thrust <= 0.0f) {
@@ -376,3 +387,11 @@ LOG_ADD(LOG_FLOAT, roll, &reference[1])
 LOG_ADD(LOG_FLOAT, pitch, &reference[2])
 LOG_ADD(LOG_FLOAT, yaw, &reference[3])
 LOG_GROUP_STOP(reference)
+
+LOG_GROUP_START(mode)
+LOG_ADD(LOG_INT32, isEco, &isEco)
+LOG_GROUP_STOP(mode)
+
+PARAM_GROUP_START(setValues)
+PARAM_ADD(PARAM_FLOAT, pwmCorrection, &pwmCorrection)
+PARAM_GROUP_STOP(setValues)

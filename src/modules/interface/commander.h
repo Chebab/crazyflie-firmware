@@ -38,6 +38,9 @@
 #define COMMANDER_WDT_TIMEOUT_STABILIZE  M2T(500)
 #define COMMANDER_WDT_TIMEOUT_SHUTDOWN   M2T(2000)
 
+#define MAX_VELZ 0.2
+#define MIN_VELZ -0.1
+
 /**
  * CRTP commander data struct
  */

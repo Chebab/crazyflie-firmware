@@ -54,10 +54,10 @@ static void referenceGeneratorTask(void* param)
       //commanderGetThrust(&zAccDesired);
       const float degToRad = 3.14f/180.0f;
       commanderGetZVelocity(&zVelDesired);
-      reference[0] = -zVelDesired;
-      reference[1] = eulerRollDesired*degToRad;
-      reference[2] = eulerPitchDesired*degToRad;
-      reference[3] = eulerYawDesired*degToRad;
+      reference[0] = 0;//-zVelDesired;
+      reference[1] = 0;//eulerRollDesired*degToRad;
+      reference[2] = 0;//eulerPitchDesired*degToRad;
+      reference[3] = 0;//eulerYawDesired*degToRad;
 
       // used if you want controller to control rates of angles instead
       //commanderGetRPYType(&rollType, &pitchType, &yawType);
@@ -80,7 +80,8 @@ void referenceGeneratorInit(void)
                 REFERENCE_GENERATOR_TASK_PRI, NULL);
 
     isInit = true;
-    int i = 0;
+    reference[0]=MIN_VELZ;
+    int i = 1;
     for(;i<STATE_SIZE;i++){
       reference[i] = 0;
     }
