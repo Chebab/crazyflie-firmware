@@ -54,7 +54,7 @@ static void referenceGeneratorTask(void* param)
       //commanderGetThrust(&zAccDesired);
       const float degToRad = 3.14f/180.0f;
       commanderGetZVelocity(&zVelDesired);
-      reference[0] = -zVelDesired;
+      reference[0] = 0;//-zVelDesired;
       reference[1] = eulerRollDesired*degToRad;
       reference[2] = eulerPitchDesired*degToRad;
       reference[3] = eulerYawDesired*degToRad;
