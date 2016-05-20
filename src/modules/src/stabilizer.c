@@ -105,7 +105,7 @@ uint32_t motorPowerM3;  // Motor 3 power output (16bit value used: 0 - 65535)
 uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
 
 //int32_t modeSwitch = 0;
-float pwmCorrection= 3.5f;
+float pwmCorrection= 4.0f;
 
 bool isEco = false;
 
@@ -172,6 +172,7 @@ static void stabilizerTask(void* param)
         states[4]=rollRate;
         states[5]=pitchRate;
         states[6]=yawRate;
+
         //states = {acc.z,eulerRollActual, eulerPitchActual, eulerYawActual,
           //rollRate, pitchRate, yawRate}; // TODO make shure this are all correct types and units
         // TODO: remember that angles are in degrees?
