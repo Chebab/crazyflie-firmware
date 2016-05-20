@@ -57,7 +57,7 @@ static void referenceGeneratorTask(void* param)
       reference[0] = -zVelDesired;
       reference[1] = eulerRollDesired*degToRad;
       reference[2] = eulerPitchDesired*degToRad;
-      reference[3] = 0;//eulerYawDesired*degToRad;
+      reference[3] = eulerYawDesired*degToRad;
 
       // used if you want controller to control rates of angles instead
       //commanderGetRPYType(&rollType, &pitchType, &yawType);

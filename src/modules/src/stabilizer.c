@@ -103,6 +103,7 @@ bool isEco = false;
 
 static float states[STATE_SIZE]={0,0,0,0,0,0,0};
 static float thrusts[INPUT_SIZE]={0,0,0,0};
+float error[STATE_SIZE]={0,0,0,0,0,0,0};
 
 static bool isInit = false;
 
@@ -241,7 +242,7 @@ bool stabilizerTest(void)
 
   return pass;
 }
-
+/*
 static void LQR_new(float *currentStates,float* reference,float *output,float **K, float **Kr){
   int i = 0;
   int j = 0;
@@ -251,7 +252,7 @@ static void LQR_new(float *currentStates,float* reference,float *output,float **
     }
   }
 }
-
+*/
 static void LQR(float currentStates[7])
 {
 
@@ -272,7 +273,9 @@ static void LQR(float currentStates[7])
     thrusts[out] = 0.027*9.81/4.0;
     //thrusts[out]=0;
     for (state=0; state<7; state++) {
+      error[state] = currentStates[state]-reference[state];  
       thrusts[out] += (*K)[out][state]*(reference[state]-currentStates[state]);
+
     }
   }
   xSemaphoreGive(canUseReferenceMutex);
@@ -387,9 +390,21 @@ LOG_ADD(LOG_FLOAT, pitch, &reference[2])
 LOG_ADD(LOG_FLOAT, yaw, &reference[3])
 LOG_GROUP_STOP(reference)
 
+LOG_GROUP_START(state_error)
+LOG_ADD(LOG_FLOAT, e1, &error[0])
+LOG_ADD(LOG_FLOAT, e2, &error[1])
+LOG_ADD(LOG_FLOAT, e3, &error[2])
+LOG_ADD(LOG_FLOAT, e4, &error[3])
+LOG_ADD(LOG_FLOAT, e5, &error[4])
+LOG_ADD(LOG_FLOAT, e6, &error[5])
+LOG_ADD(LOG_FLOAT, e7, &error[6])
+LOG_GROUP_STOP(state_error)
+
 LOG_GROUP_START(mode)
 LOG_ADD(LOG_INT32, isEco, &isEco)
 LOG_GROUP_STOP(mode)
+
+
 
 PARAM_GROUP_START(setValues)
 PARAM_ADD(PARAM_FLOAT, pwmCorrection, &pwmCorrection)
