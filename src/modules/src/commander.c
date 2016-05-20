@@ -33,8 +33,7 @@
 
 #define MIN_THRUST  1000
 #define MAX_THRUST  60000
-#define MAX_VELZ 0.2
-#define MIN_VELZ -0.1
+
 #define COMMANDER_CACH_TIMEOUT  M2T(500)
 
 /**
@@ -278,14 +277,14 @@ void commanderGetZVelocity(float* velZ)
 
   if (thrustLocked)
   {
-    *velZ = 0.0f;
+    *velZ = MIN_VELZ;//0.0f;
   }
   else
   {
     if (velocityRatio>1.0f) {
       *velZ = MAX_VELZ;
     }
-    else if (velocityRatio<-1.0f) {
+    else if (velocityRatio<=-1.0f) {
       *velZ = MIN_VELZ;
     }
     else {

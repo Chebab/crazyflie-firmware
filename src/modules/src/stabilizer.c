@@ -155,7 +155,7 @@ static void stabilizerTask(void* param)
         // try to take the semaphore until it is possible
         // TODO maybe move semaphores to LQR()
 
-        /*
+
         states[0]=-getEstimatedZvelocity();
         states[1]=eulerRollActual;
         states[2]=eulerPitchActual;
@@ -163,7 +163,6 @@ static void stabilizerTask(void* param)
         states[4]=rollRate;
         states[5]=pitchRate;
         states[6]=yawRate;
-*/
         //states = {acc.z,eulerRollActual, eulerPitchActual, eulerYawActual,
           //rollRate, pitchRate, yawRate}; // TODO make shure this are all correct types and units
         // TODO: remember that angles are in degrees?
