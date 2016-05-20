@@ -86,7 +86,7 @@ static float K_agg[INPUT_SIZE][STATE_SIZE] = {{-0.431383, -0.000000, 0.112523, 0
 {-0.431383, 0.109326, 0.000000, -0.000366, 0.035010, 0.000000, -0.000038}
 };
 
-//QEco = 1, 10, 10, 100, 1, 1, 1 
+//QEco = 1, 10, 10, 100, 1, 1, 1
 //QuEco = 2, 2, 2, 2
 static float K_eco[INPUT_SIZE][STATE_SIZE] = {{-0.318451, -0.000000, 0.112237, 0.000366, -0.000000, 0.035944, 0.000038 },
 {-0.318451, -0.109063, -0.000000, -0.000366, -0.034927, -0.000000, -0.000038 },
@@ -278,7 +278,7 @@ static void LQR(float currentStates[7])
     thrusts[out] = 0.027*9.81/4.0;
     //thrusts[out]=0;
     for (state=0; state<7; state++) {
-      error[state] = currentStates[state]-reference[state];  
+      error[state] = currentStates[state]-reference[state];
       thrusts[out] += (*K)[out][state]*(reference[state]-currentStates[state]);
 
     }
