@@ -34,35 +34,36 @@ static void referenceGeneratorTask(void* param)
   vTaskSetApplicationTaskTag(0, (void*)TASK_REFERENCE_GENERATOR_ID_NBR);
 
   lastWakeTime = xTaskGetTickCount();
+  unsigned int update = 0;
+  while (1) {
 
-  while (1) { // TODO fix the entire function
-    // some kind of event listening
-    // this makes it run with a frequency
-    // F2T comes from FreeRTOSConfig.h
-    vTaskDelayUntil(&lastWakeTime, F2T(250)); // 1Hz
-    // other possibility
-    // vTaskSuspend() will be invoked again by vTaskResume()
+    vTaskDelayUntil(&lastWakeTime, F2T(250)); // 250Hz
 
+
+    update++;
     // actual code for task
     if (imu6IsCalibrated())
     {
-      while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
+
 
       // read references from controller
       commanderGetRPY(&eulerRollDesired, &eulerPitchDesired, &eulerYawDesired);
-      //zAccDesired = 0;
-      //commanderGetThrust(&zAccDesired);
+
+      // Convet to radians
       const float degToRad = 3.14f/180.0f;
+      // Get the filtered velocity
       commanderGetZVelocity(&zVelDesired);
-      reference[0] = 0;//-zVelDesired;
+
+      while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
+      // update the reference values
+
+      // change the direction to compensate for up-side-down model
+      reference[0] = -zVelDesired;
+
       reference[1] = eulerRollDesired*degToRad;
       reference[2] = eulerPitchDesired*degToRad;
       reference[3] = eulerYawDesired*degToRad;
 
-      // used if you want controller to control rates of angles instead
-      //commanderGetRPYType(&rollType, &pitchType, &yawType);
-      //commanderGetThrust(&zAccDesired);
-      // TODO there is some kind of stateestimator for z and vz, meybe we can use them
       //release reference mutex
       xSemaphoreGive(canUseReferenceMutex);
     }
