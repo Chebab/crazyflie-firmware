@@ -24,4 +24,4 @@ src/modules/interface/mode_switch.h
 
 src/modules/src/reference_generator.c
 src/modules/src/mode_switch.c
-´´´
+```
