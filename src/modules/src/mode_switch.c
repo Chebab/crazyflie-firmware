@@ -8,10 +8,13 @@
 #include "motors.h"
 #include "system.h"
 #include "stabilizer.h"
+#include "log.h"
+#include "param.h"
 
-static bool isOn;
-static uint16_t limitThrust(int32_t value);
-static bool isInit;
+bool isAgressive = false;
+static bool isInit = false;
+int32_t changeMode = 0;
+
 
 static void modeSwitchTask(void* param)
 {
@@ -27,18 +30,19 @@ static void modeSwitchTask(void* param)
     // some kind of event listening
     // this makes it run with a frequency
     // F2T comes from FreeRTOSConfig.h
+    // TODO: find out how it should be triggered
     vTaskDelayUntil(&lastWakeTime, F2T(1)); // 1Hz
     // other possibility
     // vTaskSuspend() will be invoked again by vTaskResume()
 
-    // actual code for task
-    while (!xSemaphoreTake(canThrust1Mutex,portMAX_DELAY));
-    while (!xSemaphoreTake(canThrust2Mutex,portMAX_DELAY));
-    uint16_t motorPowerTmp = motorPowerM1;
-    motorPowerM1 = motorPowerM2;
-    motorPowerM2 = motorPowerTmp;
-    xSemaphoreGive(canThrust1Mutex);
-    xSemaphoreGive(canThrust2Mutex);
+    if(changeMode){
+      while (!xSemaphoreTake(canUseStateGainMutex, portMAX_DELAY));
+      isEco = !isEco;
+      changeMode=0;
+      xSemaphoreGive(canUseStateGainMutex);
+    }
+
+
   }
 }
 
@@ -52,7 +56,7 @@ void modeSwitchInit(void)
                 MODE_SWITCH_TASK_STACKSIZE, NULL, MODE_SWITCH_TASK_PRI, NULL);
 
     isInit = true;
-    isOn = false;
+    isAgressive = false;
 }
 
 bool modeSwitchTest(void)
@@ -63,8 +67,6 @@ bool modeSwitchTest(void)
   return pass;
 }
 
-
-static uint16_t limitThrust(int32_t value)
-{
-  return limitUint16(value);
-}
+PARAM_GROUP_START(setMode)
+PARAM_ADD(PARAM_INT32, changeMode, &changeMode)
+PARAM_GROUP_STOP(setMode)

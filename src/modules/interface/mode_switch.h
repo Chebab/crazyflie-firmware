@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+extern bool isAgressive;
+
 void modeSwitchInit(void);
 
 bool modeSwitchTest(void);

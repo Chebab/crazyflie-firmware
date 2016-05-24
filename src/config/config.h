@@ -83,7 +83,7 @@
 #define PM_TASK_PRI             0
 // ------ new tasks ------
 #define MODE_SWITCH_TASK_PRI    0   // or whatever we want to choose
-#define REFERENCE_GENERATOR_TASK_PRI    0   // or whatever we want to choose
+#define REFERENCE_GENERATOR_TASK_PRI    2   // or whatever we want to choose
 // -------------
 
 #ifdef PLATFORM_CF2

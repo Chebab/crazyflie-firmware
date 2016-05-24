@@ -38,6 +38,9 @@
 #define COMMANDER_WDT_TIMEOUT_STABILIZE  M2T(500)
 #define COMMANDER_WDT_TIMEOUT_SHUTDOWN   M2T(2000)
 
+#define MAX_VELZ 0.2
+#define MIN_VELZ -0.2
+
 /**
  * CRTP commander data struct
  */
@@ -70,6 +73,7 @@ typedef enum
 
 void commanderInit(void);
 bool commanderTest(void);
+void commanderGetZVelocity(float*);
 uint32_t commanderGetInactivityTime(void);
 void commanderGetRPY(float* eulerRollDesired, float* eulerPitchDesired, float* eulerYawDesired);
 void commanderGetRPYType(RPYType* rollType, RPYType* pitchType, RPYType* yawType);

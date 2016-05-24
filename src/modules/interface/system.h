@@ -35,6 +35,9 @@
 // semaphores for hw6
 extern xSemaphoreHandle canThrust1Mutex;
 extern xSemaphoreHandle canThrust2Mutex;
+// semaphores for LQR
+extern xSemaphoreHandle canUseStateGainMutex;
+extern xSemaphoreHandle canUseReferenceMutex;
 
 void systemInit(void);
 bool systemTest(void);

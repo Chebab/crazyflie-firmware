@@ -7,13 +7,23 @@
 #include "config.h"
 #include "motors.h"
 #include "system.h"
+#include "log.h"
+#include "commander.h"
+#include "imu.h"
+//#include "position_estimator_altitude.h"
 
 #include "stabilizer.h"
 
-static bool isOn;
+// TODO find and solve dependencies for commander
+
+static float zVelDesired;
+static float eulerRollDesired;   // Measured roll angle in deg
+static float eulerPitchDesired;  // Measured pitch angle in deg
+static float eulerYawDesired;    // Measured yaw angle in deg
+float reference[STATE_SIZE];
+
 
 static bool isInit;
-static uint16_t limitThrust(int32_t value);
 
 static void referenceGeneratorTask(void* param)
 {
@@ -24,20 +34,39 @@ static void referenceGeneratorTask(void* param)
   vTaskSetApplicationTaskTag(0, (void*)TASK_REFERENCE_GENERATOR_ID_NBR);
 
   lastWakeTime = xTaskGetTickCount();
-
+  unsigned int update = 0;
   while (1) {
-    // some kind of event listening
-    // this makes it run with a frequency
-    // F2T comes from FreeRTOSConfig.h
-    vTaskDelayUntil(&lastWakeTime, F2T(1)); // 1Hz
-    // other possibility
-    // vTaskSuspend() will be invoked again by vTaskResume()
 
+    vTaskDelayUntil(&lastWakeTime, F2T(250)); // 250Hz
+
+
+    update++;
     // actual code for task
-    while (!xSemaphoreTake(canThrust2Mutex, portMAX_DELAY));
-    isOn = !isOn; // flip the boolean
-    motorsSetRatio(MOTOR_M2, motorPowerM2);
-    xSemaphoreGive(canThrust2Mutex);
+    if (imu6IsCalibrated())
+    {
+
+
+      // read references from controller
+      commanderGetRPY(&eulerRollDesired, &eulerPitchDesired, &eulerYawDesired);
+
+      // Convet to radians
+      const float degToRad = 3.14f/180.0f;
+      // Get the filtered velocity
+      commanderGetZVelocity(&zVelDesired);
+
+      while (!xSemaphoreTake(canUseReferenceMutex, portMAX_DELAY));
+      // update the reference values
+
+      // change the direction to compensate for up-side-down model
+      reference[0] = -zVelDesired;
+
+      reference[1] = eulerRollDesired*degToRad;
+      reference[2] = eulerPitchDesired*degToRad;
+      reference[3] = eulerYawDesired*degToRad;
+
+      //release reference mutex
+      xSemaphoreGive(canUseReferenceMutex);
+    }
   }
 }
 
@@ -52,8 +81,12 @@ void referenceGeneratorInit(void)
                 REFERENCE_GENERATOR_TASK_PRI, NULL);
 
     isInit = true;
-    isOn = false;
-    motorPowerM2 = limitThrust(fabs(5000));
+    reference[0]=-MIN_VELZ;
+    int i = 1;
+    for(;i<STATE_SIZE;i++){
+      reference[i] = 0;
+    }
+
 }
 
 bool referenceGeneratorTest(void)
@@ -63,8 +96,6 @@ bool referenceGeneratorTest(void)
 
   return pass;
 }
-
-static uint16_t limitThrust(int32_t value)
-{
-  return limitUint16(value);
-}
+LOG_GROUP_START(velz)
+LOG_ADD(LOG_FLOAT, velz, &zVelDesired)
+LOG_GROUP_STOP(velz)
