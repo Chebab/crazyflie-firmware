@@ -11,7 +11,7 @@
 #include "log.h"
 #include "param.h"
 
-bool isAgressive = false;
+
 static bool isInit = false;
 int32_t changeMode = 0;
 
@@ -56,7 +56,6 @@ void modeSwitchInit(void)
                 MODE_SWITCH_TASK_STACKSIZE, NULL, MODE_SWITCH_TASK_PRI, NULL);
 
     isInit = true;
-    isAgressive = false;
 }
 
 bool modeSwitchTest(void)

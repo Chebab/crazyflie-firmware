@@ -107,7 +107,7 @@ uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
 // Modifyable value to compensate for
 float pwmCorrection= 4.0f;
 
-bool isEco = true;
+bool isEco = false;
 
 // state and input values initialized to 0
 static float states[STATE_SIZE]={0,0,0,0,0,0,0};
