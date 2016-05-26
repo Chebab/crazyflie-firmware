@@ -107,7 +107,7 @@ uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
 // Modifyable value to compensate for
 float pwmCorrection= 4.0f;
 
-bool isEco = false;
+bool isEco = true;
 
 // state and input values initialized to 0
 static float states[STATE_SIZE]={0,0,0,0,0,0,0};
@@ -238,8 +238,16 @@ static void LQR(float currentStates[7])
     //thrusts[out]=0;
     for (state=0; state<7; state++) {
       error[state] = currentStates[state]-reference[state]; // update error for logging
-      // set the outputs
-      thrusts[out] += (*K)[out][state]*(reference[state]-currentStates[state]);
+      if(isEco){
+        thrusts[out]=0;
+      }
+      else{
+        // set the outputs
+        thrusts[out] += (*K)[out][state]*(reference[state]-currentStates[state]);
+      }
+
+
+
 
     }
   }
