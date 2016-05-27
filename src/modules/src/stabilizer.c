@@ -92,7 +92,7 @@ static float K_eco[INPUT_SIZE][STATE_SIZE] = {{-1.416591, 0.000000, 0.224049, 0.
 {-1.416591, -0.217946, -0.000000, -0.015246, -0.034522, -0.000000, -0.000067 },
 {-1.416591, -0.000000, -0.224049, 0.015246, -0.000000, -0.035490, 0.000067 },
 {-1.416591, 0.217946, 0.000000, -0.015246, 0.034522, 0.000000, -0.000067}
-};  
+};
 
 
 uint16_t actuatorThrust;  // Actuator output for thrust base
@@ -105,7 +105,7 @@ uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
 // Modifyable value to compensate for
 float pwmCorrection= 4.0f;
 
-bool isEco = false;
+bool isEco = true;
 
 // state and input values initialized to 0
 static float states[STATE_SIZE]={0,0,0,0,0,0,0};

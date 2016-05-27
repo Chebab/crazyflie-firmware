@@ -58,7 +58,7 @@ static void referenceGeneratorTask(void* param)
       // update the reference values
 
       // change the direction to compensate for up-side-down model
-      reference[0] = -zVelDesired;
+      reference[0] = 0;//-zVelDesired;
 
       reference[1] = eulerRollDesired*degToRad;
       reference[2] = eulerPitchDesired*degToRad;
