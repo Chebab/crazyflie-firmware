@@ -84,7 +84,7 @@ static float K_agg[INPUT_SIZE][STATE_SIZE] = {{-0.049265, -0.000000, 0.105303, 0
 {-0.049265, -0.104388, -0.000000, -0.000037, -0.016987, -0.000000, -0.000037 },
 {-0.049265, -0.000000, -0.105303, 0.000037, -0.000000, -0.017154, 0.000037 },
 {-0.049265, 0.104388, -0.000000, -0.000037, 0.016987, -0.000000, -0.000037}
-}; 
+};
 
 //QEco = 10, 42, 42, 1, 1, 1, 1
 //QuEco = 2000, 2000, 2000, 2000
@@ -105,7 +105,7 @@ uint32_t motorPowerM4;  // Motor 4 power output (16bit value used: 0 - 65535)
 // Modifyable value to compensate for
 float pwmCorrection= 4.0f;
 
-bool isEco = true;
+bool isEco = false;
 
 // state and input values initialized to 0
 static float states[STATE_SIZE]={0,0,0,0,0,0,0};
